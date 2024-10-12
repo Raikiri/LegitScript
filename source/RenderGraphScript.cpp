@@ -1,6 +1,7 @@
 #include <map>
 #include "RenderGraphScript.h"
 #include <stdexcept>
+#include <algorithm>
 #include "AngelscriptWrapper/angelscript-cpp.h"
 #include <iostream>
 
