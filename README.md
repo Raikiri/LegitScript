@@ -1,5 +1,5 @@
 # LegitScript
-LegitScript is a glsl-like hybrid CPU/GPU scripting language that has the goal of defining both the shaders and also the way those shaders need to be invoked. The goal is to make the entire language look like it's an extension over glsl.
+LegitScript is a crossplatform glsl-like hybrid CPU/GPU scripting language that has the goal of defining both the shaders and also the way those shaders need to be invoked. The goal is to make the entire language look like it's an extension over glsl.
 
 ```cpp
 void ColorPass(in float r, in float g, in float b, out vec4 out_color)
