@@ -78,8 +78,8 @@ void RunTest()
 ```
 
 # How does it actually work?
-The script is split into blocks defined inside double curly brackets: `{{}}`. Blocks corresponding to color passes are appended to glsl shader headers and can be directly compiled as glsl.
-Block named `void RenderGraphMain()` is the render graph function and it's internally compiled by LegitScript as AngelScript. AngelScript is chosen as the closes to glsl language that can be interpreted easily from C++.
+The script is split into blocks defined inside double curly brackets: `{{}}`. Blocks corresponding to shader passes are appended to glsl shader headers and can be directly compiled as glsl. For each such a block, LegitScript returns
+one generated glsl shader ready to be compiled. Block named `void RenderGraphMain()` is the render graph function and it's internally compiled by LegitScript as AngelScript. AngelScript is chosen as the closes to glsl language that can be interpreted easily from C++.
 `RunScript()` is meant to be called every frame and it outputs all events that happen during that frame: loading images, running shaders, etc. This information is meant to be easily translateable into actual draw calls on any GAPI backend
 that supports glsl.
 
