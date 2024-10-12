@@ -22,6 +22,18 @@ include_directories ("${ANGELSCRIPT_DIR}/add_on")
 
 
 file(GLOB_RECURSE dep_sources ${ANGELSCRIPT_DIR}/source/*.cpp ${ANGELSCRIPT_DIR}/add_on/*.cpp)
+
+#angelscript requires this annoying asm file when compiled under MSVC
+#this comes from angelscript's sdk/angelscript/projects/cmake
+if(MSVC AND CMAKE_CL_64)
+    enable_language(ASM_MASM)
+    if(CMAKE_ASM_MASM_COMPILER_WORKS)
+        set(dep_sources ${dep_sources} ${ANGELSCRIPT_DIR}/source/as_callfunc_x64_msvc_asm.asm)
+    else()
+        message(FATAL ERROR "MSVC x86_64 target requires a working assembler")
+    endif()
+endif()
+
 file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
 file(GLOB_RECURSE legit_script_headers ./include/*.h)
 set(CMAKE_DEBUG_POSTFIX d)
