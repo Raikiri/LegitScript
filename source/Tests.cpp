@@ -79,7 +79,7 @@ void RunTest()
   }
 }
 
-#if COMPILE_TESTS_MAIN==1
+#if defined(COMPILE_TESTS_MAIN)
 int main()
 {
   RunTest();

@@ -20,7 +20,7 @@ set(CMAKE_DEBUG_POSTFIX d)
 
 add_executable(LegitScript)
 
-add_compile_definitions(COMPILE_TESTS_MAIN=1)
+add_compile_definitions(COMPILE_TESTS_MAIN)
 
 #source_group(TREE src/)
 target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legit_script_headers})
