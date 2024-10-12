@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.29.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-if(MSVC)
+#if(MSVC)
   #this is to make peglib happy for msvc build. otherwise it seems to complain that __cplusplus macro is not set as C++17
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
-endif()
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+#endif()
 
 
 project(LegitScriptCMake VERSION 0.1.0)
@@ -24,11 +24,14 @@ include_directories ("${ANGELSCRIPT_DIR}/add_on")
 file(GLOB_RECURSE dep_sources ${ANGELSCRIPT_DIR}/source/*.cpp ${ANGELSCRIPT_DIR}/add_on/*.cpp)
 file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
 file(GLOB_RECURSE legit_script_headers ./include/*.h)
-
 set(CMAKE_DEBUG_POSTFIX d)
 
 add_executable(LegitScript)
 #set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
+
+if(MSVC)
+  target_compile_options(LegitScript PUBLIC "/Zc:__cplusplus")
+endif()
 
 add_compile_definitions(COMPILE_TESTS_MAIN)
 
