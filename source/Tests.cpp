@@ -78,8 +78,11 @@ void RunTest()
     std::cout << "Exception: " << e.what();
   }
 }
+
+#if COMPILE_TESTS_MAIN==1
 int main()
 {
   RunTest();
   return 0;
 }
+#endif
