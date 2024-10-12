@@ -1,0 +1,20 @@
+/build/*
+*.sdf
+*.exp
+*.opensdf
+**/ipch/**
+**/*bckp*/**
+*- Copy
+*.ipdb*
+*.iobj*
+*.opendb
+*.zip
+*.pdb
+*.ilk
+*.img
+*.dat
+*_u.spv
+.vs
+/bin/movies/*
+/bin/data/Meshes/*
+/bin/cmake*
