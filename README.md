@@ -84,8 +84,9 @@ one generated glsl shader ready to be compiled. Block named `void RenderGraphMai
 that supports glsl.
 
 # Dependencies (bundled in)
-cpp-peglib is used to parse LegitScript syntax: https://github.com/yhirose/cpp-peglib
-angelscript is used as the interpreter of the render graph code: https://www.angelcode.com/angelscript/
+`cpp-peglib` is used to parse LegitScript syntax: https://github.com/yhirose/cpp-peglib
+
+`angelscript` is used as the interpreter of the render graph code: https://www.angelcode.com/angelscript/
 
 # Building and intended usage
 LegitScript has no external dependencies and is meant to be included as source into any project that needs it. CMake defines a macro `COMPILE_TESTS_MAIN` that makes it build its own `main()` funciton inside of `Test.cpp`
