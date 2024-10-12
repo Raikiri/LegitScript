@@ -55,9 +55,6 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         echo "emscripten-output-dir=${{ github.workspace }}/build_emscripten" >> "$GITHUB_OUTPUT"
         
-    - name: Setup Emscripten toolchain
-      uses: mymindstorm/setup-emsdk@v14
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -71,13 +68,6 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-    - name: Configure emcmake
-      run: >
-        emcmake cmake
-        -B ${{ steps.strings.outputs.emscripten-output-dir }}
-        -S ${{ github.workspace }}
-    - name: Build Emscripten
-      run: cmake --build ${{ steps.strings.outputs.emscripten-output-dir }}
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
