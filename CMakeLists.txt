@@ -19,6 +19,7 @@ file(GLOB_RECURSE legit_script_headers ./include/*.h)
 set(CMAKE_DEBUG_POSTFIX d)
 
 add_executable(LegitScript)
+set_property(TARGET LegitScript PROPERTY CXX_STANDARD 17)
 
 add_compile_definitions(COMPILE_TESTS_MAIN)
 
