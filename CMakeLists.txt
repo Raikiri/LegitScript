@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.29.0)
+
+set(CMAKE_CXX_STANDARD 17)
+
 project(LegitScriptCMake VERSION 0.1.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
@@ -19,7 +22,7 @@ file(GLOB_RECURSE legit_script_headers ./include/*.h)
 set(CMAKE_DEBUG_POSTFIX d)
 
 add_executable(LegitScript)
-set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
+#set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
 
 add_compile_definitions(COMPILE_TESTS_MAIN)
 
