@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.29.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
+if(MSVC)
+  #this is to make peglib happy for msvc build. otherwise it seems to complain that __cplusplus macro is not set as C++17
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+endif()
+
+
 project(LegitScriptCMake VERSION 0.1.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
