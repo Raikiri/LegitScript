@@ -98,7 +98,7 @@ namespace ls
     Image::Id id;
     bool operator < (const CachedImageRequest &other) const
     {
-      return std::tuple(pixel_format, size.x, size.y, id) < std::tuple(other.pixel_format, other.size.x, other.size.y, other.id);
+      return std::tie(pixel_format, size.x, size.y, id) < std::tie(other.pixel_format, other.size.x, other.size.y, other.id);
     }
   };
 
