@@ -1,4 +1,4 @@
-# LegitScript ![example workflow](https://github.com/Raikiri/LegitScript/actions/cmake-multi-platform.yml/badge.svg)
+# LegitScript ![example workflow](https://github.com/Raikiri/LegitScript/actions/workflows/cmake-multi-platform.yml/badge.svg)
 LegitScript is a crossplatform glsl-like hybrid CPU/GPU scripting language that has the goal of defining both the shaders and also the way those shaders need to be invoked. The goal is to make the entire language look like it's an extension over glsl.
 
 ```cpp
