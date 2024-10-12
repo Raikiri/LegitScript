@@ -7,6 +7,8 @@ mkShell {
     clang
     lldb
     gnumake
+    emscripten
+    python3
   ];
 
   buildInputs = with pkgs; [
