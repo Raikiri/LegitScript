@@ -201,6 +201,7 @@ nix-shell
 # note: the build-emscripten directory is hardecoded in web/demo.js
 emcmake cmake -B build-emscripten -S .
 cmake --build build-emscripten
+cmake --install build-emscripten
 static-web-server -p 1234 -d .
 ```
 

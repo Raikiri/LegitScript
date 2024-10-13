@@ -13,3 +13,7 @@ target_link_options(LegitScriptWasm PRIVATE
   -sEXPORT_ES6=1
   -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
 )
+
+#install(TARGETS LegitScriptWasm DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LegitScriptWasm.wasm DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LegitScriptWasm.js DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist/)

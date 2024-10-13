@@ -1,4 +1,4 @@
-import Module from "../build-emscripten/LegitScriptWasm.js"
+import Module from "./dist/LegitScriptWasm.js"
 
 (async () => {
   const m = await Module();
