@@ -108,12 +108,12 @@ void RunTestJson()
   {
     std::string shader_descs = ls::LoadScript(string_stream.str());
     std::cout << "Script loaded successfully\n";
-    std::cout << "Shader descs: " << shader_descs;
+    std::cout << "Shader descs: " << shader_descs << "\n";
       
     std::cout << "Running script\n";
-    auto script_calls = ls::RunScript(1024, 1024, 0.0f);
+    std::string script_calls = ls::RunScript(1024, 1024, 0.0f);
     std::cout << "Script ran successfully: \n";
-    std::cout << "Script calls: " << script_calls;
+    std::cout << "Script calls: " << script_calls << "\n";
   }
   catch(const std::exception &e)
   {

@@ -10,8 +10,9 @@ void RenderGraphMain()
 {{
   void main()
   {
+    Image img = GetImage(128, 128, rgba8);
     ColorPass(
-      SliderFloat("R", 0.0f, 1.0f),
+      SliderFloat("R", 0.0f, 1.0f) + 0.5f,
       SliderFloat("G", 0.0f, 1.0f),
       SliderFloat("B", 0.0f, 1.0f),
       GetSwapchainImage());
