@@ -31,6 +31,17 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    - uses: actions/upload-artifact@v4.3.5
+      with:
+        name: 'LegitScriptWasm-${{ github.ref_name }}.js'
+        path: '${{github.workspace}}/build/web/LegitScriptWasm.js'
+        overwrite: true
+    - uses: actions/upload-artifact@v4.3.5
+      with:
+        name: 'LegitScriptWasm-${{ github.ref_name }}.wasm'
+        path: '${{github.workspace}}/build/web/LegitScriptWasm.wasm'
+        overwrite: true
+        
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
