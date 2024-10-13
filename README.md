@@ -86,6 +86,104 @@ one generated glsl shader ready to be compiled. Block named `void RenderGraphMai
 `RunScript()` is meant to be called every frame and it outputs all events that happen during that frame: loading images, running shaders, etc. This information is meant to be easily translateable into actual draw calls on any GAPI backend
 that supports glsl.
 
+# String-only JSON interface
+For the purposes of embedding LegitScript into web, we support an emscripten build and a dedicated string-only interface for easy integration with JavaScript code:
+```cpp
+  std::cout << "Test starts\n";  
+  ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
+    {
+      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
+      return val;
+    },
+    [](std::string name, int val, int min_val, int max_val) -> int
+    {
+      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
+      return val;
+    },
+    [](std::string text) -> void
+    {
+      std::cout << "Text: " << text << "\n";
+    });
+
+  std::ifstream file_stream("../data/Scripts/main.ls");
+  std::stringstream string_stream;
+  string_stream << file_stream.rdbuf();
+  try
+  {
+    std::string shader_descs = ls::LoadScript(string_stream.str());      
+    std::string script_calls = ls::RunScript(1024, 1024, 0.0f);
+  }
+  catch(const std::exception &e)
+  {
+    std::cout << "Exception: " << e.what();
+  }
+```
+Shader descs output:
+```json
+{
+  "shader_descs": [
+    {
+      "body": "void main()\n  {\n    out_color = vec4(r, g, b + 0.5f, 1.0f);\n  }\n",
+      "name": "ColorPass",
+      "outs": [
+        {
+          "name": "out_color",
+          "type": "vec4"
+        }
+      ],
+      "samplers": [],
+      "uniforms": [
+        {
+          "name": "r",
+          "type": "float"
+        },
+        {
+          "name": "g",
+          "type": "float"
+        },
+        {
+          "name": "b",
+          "type": "float"
+        }
+      ]
+    }
+  ]
+}
+```
+Script calls output:
+```json
+{
+  "cached_img_requests": [],
+  "loaded_img_requests": [],
+  "shader_invocations": [
+    {
+      "color_attachments": [
+        {
+          "id": 0,
+          "mip_end": 1,
+          "mip_start": 0
+        }
+      ],
+      "image_sampler_bindings": [],
+      "shader_name": "ColorPass",
+      "uniforms": [
+        {
+          "type": "float",
+          "val": 0.0
+        },
+        {
+          "type": "float",
+          "val": 0.0
+        },
+        {
+          "type": "float",
+          "val": 0.0
+        }
+      ]
+    }
+  ]
+}
+```
 # Dependencies (bundled in)
 `cpp-peglib` is used to parse LegitScript syntax: https://github.com/yhirose/cpp-peglib
 
