@@ -115,8 +115,4 @@ namespace ls
     std::vector<LoadedImageRequest> loaded_image_requests;
     std::vector<ScriptShaderInvocation> script_shader_invocations;
   };
-  
-  using SliderFloatFunc = std::function<float(std::string, float, float, float)>;
-  using SliderIntFunc = std::function<int(std::string, int, int, int)>;
-  using TextFunc = std::function<void(std::string)>;
 }

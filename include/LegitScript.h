@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 #include "LegitScriptCalls.h"
-
+#include "LegitScriptCallbacks.h"
 
 namespace ls
 {

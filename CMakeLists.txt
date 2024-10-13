@@ -12,11 +12,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 
 set(CPP_PEGLIB_INCLUDE_DIR ./dependencies/cpp-peglib)
+set(JSON_INCLUDE_DIR ./dependencies/json)
 set(ANGELSCRIPT_DIR ./dependencies/angelscript_2.36.1)
 
 include_directories ("${CPP_PEGLIB_INCLUDE_DIR}")
 include_directories ("${ANGELSCRIPT_DIR}/include")
 include_directories ("${ANGELSCRIPT_DIR}/add_on")
+include_directories ("${JSON_INCLUDE_DIR}")
 
 
 file(GLOB_RECURSE dep_sources ${ANGELSCRIPT_DIR}/source/*.cpp ${ANGELSCRIPT_DIR}/add_on/*.cpp)

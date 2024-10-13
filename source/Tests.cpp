@@ -1,4 +1,5 @@
 #include "../include/LegitScript.h"
+#include "../include/LegitScriptEmBindings.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -57,7 +58,7 @@ void RunTest()
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
   string_stream << file_stream.rdbuf();
-  std::cout << "Loading script\n";
+  std::cout << "Loading script size: " << string_stream.str().length() << "\n";
   try
   {
     auto shader_descs = script.LoadScript(string_stream.str());
@@ -79,10 +80,53 @@ void RunTest()
   }
 }
 
+
+void RunTestJson()
+{
+  
+  std::cout << "Test starts\n";  
+  ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
+    {
+      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
+      return val;
+    },
+    [](std::string name, int val, int min_val, int max_val) -> int
+    {
+      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
+      return val;
+    },
+    [](std::string text) -> void
+    {
+      std::cout << "Text: " << text << "\n";
+    });
+
+  std::ifstream file_stream("../data/Scripts/main.ls");
+  std::stringstream string_stream;
+  string_stream << file_stream.rdbuf();
+  std::cout << "Loading script size: " << string_stream.str().length() << "\n";
+  try
+  {
+    std::string shader_descs = ls::LoadScript(string_stream.str());
+    std::cout << "Script loaded successfully\n";
+    std::cout << "Shader descs: " << shader_descs;
+      
+    std::cout << "Running script\n";
+    auto script_calls = ls::RunScript(1024, 1024, 0.0f);
+    std::cout << "Script ran successfully: \n";
+    std::cout << "Script calls: " << script_calls;
+  }
+  catch(const std::exception &e)
+  {
+    std::cout << "Exception: " << e.what();
+  }
+}
+
+
 #if defined(COMPILE_TESTS_MAIN)
 int main()
 {
-  RunTest();
+  //RunTest();
+  RunTestJson();
   return 0;
 }
 #endif

@@ -1,6 +1,7 @@
 #pragma once
 #include "ScriptParser.h"
 #include "../include/LegitScriptCalls.h"
+#include "../include/LegitScriptCallbacks.h"
 #include <functional>
 
 namespace ls
