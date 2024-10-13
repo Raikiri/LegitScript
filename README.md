@@ -37,7 +37,7 @@ Every shader is declared as a function where every `in` parameter is a uniform/i
 uniforms are automatically accessible from a constant buffer, images are automatically bound into samplers and a render target is bound for every out parameter. In the example above `void RenderGraphMain()` is the block defining a render
 graph. `void main()` in that block is the render graph entry function: it invokes the shader called `ColorPass()`, passing `r, g, b` uniforms directly from debug sliders and the swapchain is bound as its render target.
 
-This library is a middleware that does not run or compile shaders themselves, but instead it runs the script and outputs a list of shader invocations that happened during that script: which shaders were called with which parameters. The idea is that
+This library is a middleware that does not run or compile shaders themselves, but instead it runs the script and outputs a list of events that happened during that script run: which shaders were called with which parameters, which images were created, etc. The idea is that
 multiple GPU backends (for example, Vulkan or webgl) can easily parse that list and run the shaders. Here's a minimal example of how the library functions:
 ```cpp
 void RunTest()
