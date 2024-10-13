@@ -1,6 +1,5 @@
 #include <string>
 #include <iostream>
-#include <format>
 
 #include <emscripten/bind.h>
 #include <json.hpp>
