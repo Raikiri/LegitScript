@@ -56,12 +56,9 @@ if (EMSCRIPTEN)
     ${CMAKE_CURRENT_LIST_DIR}/web/LegitScriptEmscriptenApi.cpp
   )
 
-  target_include_directories(LegitScriptWasm PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
   target_link_libraries(LegitScriptWasm PUBLIC embind)
   target_link_options(LegitScriptWasm PRIVATE
     -sEXPORT_ES6=1
     -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
   )
-
-  target_compile_definitions(LegitScriptWasm PRIVATE -DLEGITSCRIPT_EMSCRIPTEN_BUILD)
 endif()
