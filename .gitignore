@@ -1,4 +1,5 @@
 /build/*
+build-*
 *.sdf
 *.exp
 *.opensdf

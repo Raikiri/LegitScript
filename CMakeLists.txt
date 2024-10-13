@@ -10,7 +10,6 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
-
 set(CPP_PEGLIB_INCLUDE_DIR ./dependencies/cpp-peglib)
 set(JSON_INCLUDE_DIR ./dependencies/json)
 set(ANGELSCRIPT_DIR ./dependencies/angelscript_2.36.1)
@@ -19,7 +18,6 @@ include_directories ("${CPP_PEGLIB_INCLUDE_DIR}")
 include_directories ("${ANGELSCRIPT_DIR}/include")
 include_directories ("${ANGELSCRIPT_DIR}/add_on")
 include_directories ("${JSON_INCLUDE_DIR}")
-
 
 file(GLOB_RECURSE dep_sources ${ANGELSCRIPT_DIR}/source/*.cpp ${ANGELSCRIPT_DIR}/add_on/*.cpp)
 
@@ -36,6 +34,7 @@ endif()
 
 file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
 file(GLOB_RECURSE legit_script_headers ./include/*.h)
+
 set(CMAKE_DEBUG_POSTFIX d)
 
 add_executable(LegitScript)
@@ -48,3 +47,18 @@ target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legi
 target_link_libraries(LegitScript)
 set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/cmaked")
 set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/cmake")
+
+if (EMSCRIPTEN)
+  add_executable(LegitScriptWasm
+    ${legit_script_sources}
+    ${dep_sources}
+
+    ${CMAKE_CURRENT_LIST_DIR}/web/LegitScriptEmscriptenApi.cpp
+  )
+
+  target_link_libraries(LegitScriptWasm PUBLIC embind)
+  target_link_options(LegitScriptWasm PRIVATE
+    -sEXPORT_ES6=1
+    -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
+  )
+endif()
