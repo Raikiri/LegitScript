@@ -32,39 +32,36 @@ if(MSVC AND CMAKE_CL_64)
     endif()
 endif()
 
-if (EMSCRIPTEN)
-  set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/source)
-  add_executable(LegitScriptWasm
-    ${SOURCE_DIR}/LegitScript.cpp
-    ${SOURCE_DIR}/LegitScriptEmscriptenApi.cpp
-    ${SOURCE_DIR}/LegitScriptJsonApi.cpp
-    ${SOURCE_DIR}/RenderGraphScript.cpp
-    ${SOURCE_DIR}/RenderGraphScript.h
-    ${SOURCE_DIR}/ScriptParser.cpp
+file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
+file(GLOB_RECURSE legit_script_headers ./include/*.h)
 
+set(CMAKE_DEBUG_POSTFIX d)
+
+add_executable(LegitScript)
+#set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
+
+add_compile_definitions(COMPILE_TESTS_MAIN)
+
+#source_group(TREE src/)
+target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legit_script_headers})
+target_link_libraries(LegitScript)
+set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/cmaked")
+set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/cmake")
+
+if (EMSCRIPTEN)
+  add_executable(LegitScriptWasm
+    ${legit_script_sources}
     ${dep_sources}
+
+    ${CMAKE_CURRENT_LIST_DIR}/web/LegitScriptEmscriptenApi.cpp
   )
 
-  target_compile_features(LegitScriptWasm PRIVATE cxx_std_17)
   target_include_directories(LegitScriptWasm PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
   target_link_libraries(LegitScriptWasm PUBLIC embind)
   target_link_options(LegitScriptWasm PRIVATE
     -sEXPORT_ES6=1
     -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
   )
-else()
-  file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
-  file(GLOB_RECURSE legit_script_headers ./include/*.h)
-  set(CMAKE_DEBUG_POSTFIX d)
 
-  add_executable(LegitScript)
-  #set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
-
-  add_compile_definitions(COMPILE_TESTS_MAIN)
-
-  #source_group(TREE src/)
-  target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legit_script_headers})
-  target_link_libraries(LegitScript)
-  set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/cmaked")
-  set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/cmake")
+  target_compile_definitions(LegitScriptWasm PRIVATE -DLEGITSCRIPT_EMSCRIPTEN_BUILD)
 endif()
