@@ -55,7 +55,7 @@ void RunTest()
       std::cout << "Text: " << text << "\n";
     }
   );
-  
+
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
   string_stream << file_stream.rdbuf();
@@ -64,7 +64,7 @@ void RunTest()
     auto shader_descs = script.LoadScript(string_stream.str());
     for(const auto &shader_desc : shader_descs)
       PrintShaderDesc(shader_desc);
-      
+
     auto script_calls = script.RunScript({1024, 1024}, 0.0f);
     for(const auto &req : script_calls.cached_image_requests)
       PrintCachedImgRequest(req);
@@ -109,7 +109,7 @@ void RunTestJson()
   string_stream << file_stream.rdbuf();
   try
   {
-    std::string shader_descs = ls::LoadScript(string_stream.str());      
+    std::string shader_descs = ls::LoadScript(string_stream.str());
     std::string script_calls = ls::RunScript(1024, 1024, 0.0f);
   }
   catch(const std::exception &e)
@@ -192,3 +192,16 @@ Script calls output:
 # Building and intended usage
 LegitScript has no external dependencies and is meant to be included as source into any project that needs it. CMake defines a macro `COMPILE_TESTS_MAIN` that makes it build its own `main()` funciton inside of `Test.cpp`
 that serves as a minimal example and a minimal test, but when used as a middleware, there is no main function and you're expected to just add all of its `*.cpp` files to your project and include the `include/LegitScript.h` to use it.
+
+
+# Running the web demo
+
+```
+nix-shell
+# note: the build-emscripten directory is hardecoded in web/demo.js
+emcmake cmake -B build-emscripten -S .
+cmake --build build-emscripten
+static-web-server -p 1234 -d .
+```
+
+navigate to http://127.0.0.1:1234/web/demo.html and take a look at the devtools console

@@ -10,7 +10,6 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
-
 set(CPP_PEGLIB_INCLUDE_DIR ./dependencies/cpp-peglib)
 set(JSON_INCLUDE_DIR ./dependencies/json)
 set(ANGELSCRIPT_DIR ./dependencies/angelscript_2.36.1)
@@ -19,7 +18,6 @@ include_directories ("${CPP_PEGLIB_INCLUDE_DIR}")
 include_directories ("${ANGELSCRIPT_DIR}/include")
 include_directories ("${ANGELSCRIPT_DIR}/add_on")
 include_directories ("${JSON_INCLUDE_DIR}")
-
 
 file(GLOB_RECURSE dep_sources ${ANGELSCRIPT_DIR}/source/*.cpp ${ANGELSCRIPT_DIR}/add_on/*.cpp)
 
@@ -34,17 +32,39 @@ if(MSVC AND CMAKE_CL_64)
     endif()
 endif()
 
-file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
-file(GLOB_RECURSE legit_script_headers ./include/*.h)
-set(CMAKE_DEBUG_POSTFIX d)
+if (EMSCRIPTEN)
+  set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/source)
+  add_executable(LegitScriptWasm
+    ${SOURCE_DIR}/LegitScript.cpp
+    ${SOURCE_DIR}/LegitScriptEmscriptenApi.cpp
+    ${SOURCE_DIR}/LegitScriptJsonApi.cpp
+    ${SOURCE_DIR}/RenderGraphScript.cpp
+    ${SOURCE_DIR}/RenderGraphScript.h
+    ${SOURCE_DIR}/ScriptParser.cpp
 
-add_executable(LegitScript)
-#set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
+    ${dep_sources}
+  )
 
-add_compile_definitions(COMPILE_TESTS_MAIN)
+  target_compile_features(LegitScriptWasm PRIVATE cxx_std_17)
+  target_include_directories(LegitScriptWasm PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+  target_link_libraries(LegitScriptWasm PUBLIC embind)
+  target_link_options(LegitScriptWasm PRIVATE
+    -sEXPORT_ES6=1
+    -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
+  )
+else()
+  file(GLOB_RECURSE legit_script_sources ./source/*.cpp ./source/*.h)
+  file(GLOB_RECURSE legit_script_headers ./include/*.h)
+  set(CMAKE_DEBUG_POSTFIX d)
 
-#source_group(TREE src/)
-target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legit_script_headers})
-target_link_libraries(LegitScript)
-set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/cmaked")
-set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/cmake")
+  add_executable(LegitScript)
+  #set_property(TARGET LegitScript PROPERTY CXX_STANDARD 20)
+
+  add_compile_definitions(COMPILE_TESTS_MAIN)
+
+  #source_group(TREE src/)
+  target_sources(LegitScript PRIVATE ${dep_sources} ${legit_script_sources} ${legit_script_headers})
+  target_link_libraries(LegitScript)
+  set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/cmaked")
+  set_target_properties(LegitScript PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/cmake")
+endif()

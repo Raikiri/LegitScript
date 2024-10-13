@@ -9,6 +9,7 @@ mkShell {
     gnumake
     emscripten
     python3
+    static-web-server
   ];
 
   buildInputs = with pkgs; [
