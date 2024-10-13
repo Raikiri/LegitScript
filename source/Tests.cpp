@@ -1,5 +1,5 @@
 #include "../include/LegitScript.h"
-#include "../include/LegitScriptEmBindings.h"
+#include "../include/LegitScriptJsonApi.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

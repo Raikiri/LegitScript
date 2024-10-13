@@ -1,4 +1,4 @@
-#include "../include/LegitScriptEmBindings.h"
+#include "../include/LegitScriptJsonApi.h"
 #include "../include/LegitScript.h"
 #include <assert.h>
 #include <json.hpp>
