@@ -42,7 +42,6 @@ multiple GPU backends (for example, Vulkan or webgl) can easily parse that list 
 ```cpp
 void RunTest()
 {
-  std::cout << "Test starts\n";  
   ls::LegitScript script(
     [](std::string name, float val, float min_val, float max_val) -> float {
       std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
@@ -60,7 +59,6 @@ void RunTest()
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
   string_stream << file_stream.rdbuf();
-  std::cout << "Loading script\n";
   try
   {
     auto shader_descs = script.LoadScript(string_stream.str());
@@ -89,7 +87,8 @@ that supports glsl.
 # String-only JSON interface
 For the purposes of embedding LegitScript into web, we support an emscripten build and a dedicated string-only interface for easy integration with JavaScript code:
 ```cpp
-  std::cout << "Test starts\n";  
+void RunTestJson()
+{
   ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
     {
       std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
@@ -117,6 +116,7 @@ For the purposes of embedding LegitScript into web, we support an emscripten bui
   {
     std::cout << "Exception: " << e.what();
   }
+}
 ```
 Shader descs output:
 ```json
