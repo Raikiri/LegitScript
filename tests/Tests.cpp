@@ -1,5 +1,5 @@
-#include "../include/LegitScript.h"
-#include "../include/LegitScriptJsonApi.h"
+#include <LegitScript.h>
+#include <LegitScriptJsonApi.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -121,12 +121,9 @@ void RunTestJson()
   }
 }
 
-
-#if defined(COMPILE_TESTS_MAIN)
 int main()
 {
   //RunTest();
   RunTestJson();
   return 0;
 }
-#endif

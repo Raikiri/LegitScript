@@ -4,7 +4,7 @@
 #include <emscripten/bind.h>
 #include <json.hpp>
 
-#include "../include/LegitScriptJsonApi.h"
+#include "LegitScriptJsonApi.h"
 
 std::string LegitScriptLoad(std::string source) {
 
