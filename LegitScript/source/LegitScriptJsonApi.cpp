@@ -187,18 +187,19 @@ namespace ls
     }
     return arr;
   }
-  json SerializeScriptCalls(const ls::ScriptCalls &script_calls, const ls::ScriptShaderDescs &shader_descs)
+  json SerializeScriptEvents(const ls::ScriptEvents &script_events, const ls::ScriptShaderDescs &shader_descs)
   {
     return json::object({
-      {"cached_img_requests", SerializeCachedImgRequests(script_calls.cached_image_requests)},
+      {"cached_img_requests", SerializeCachedImgRequests(script_events.cached_image_requests)},
       {"loaded_img_requests", json::array()},
-      {"shader_invocations", SerializeShaderInvocations(script_calls.script_shader_invocations, shader_descs)}
+      {"shader_invocations", SerializeShaderInvocations(script_events.script_shader_invocations, shader_descs)},
+      {"errors", json::array({script_events.errors})}
     });
   }
   std::string RunScript(int swapchain_width, int swapchain_height, float time)
   {
     assert(instance);
-    auto script_calls = instance->RunScript({swapchain_width, swapchain_height}, time);
-    return SerializeScriptCalls(script_calls, shader_descs).dump(2);
+    auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
+    return SerializeScriptEvents(script_events, shader_descs).dump(2);
   }
 }

@@ -109,10 +109,11 @@ namespace ls
   };
   
 
-  struct ScriptCalls
+  struct ScriptEvents
   {
     std::vector<CachedImageRequest> cached_image_requests;
     std::vector<LoadedImageRequest> loaded_image_requests;
     std::vector<ScriptShaderInvocation> script_shader_invocations;
+    std::vector<std::string> errors;
   };
 }

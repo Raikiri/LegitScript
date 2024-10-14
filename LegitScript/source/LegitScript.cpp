@@ -65,7 +65,7 @@ namespace ls
 
       return shader_descs;
     }
-    ls::ScriptCalls RunScript(ivec2 swapchain_size, float time)
+    ls::ScriptEvents RunScript(ivec2 swapchain_size, float time)
     {
       return render_graph_script.RunScript(swapchain_size, time);
     }
@@ -74,7 +74,7 @@ namespace ls
     ls::ScriptParser script_parser;
   };
   
-  ls::ScriptCalls LegitScript::RunScript(ivec2 swapchain_size, float time)
+  ls::ScriptEvents LegitScript::RunScript(ivec2 swapchain_size, float time)
   {
     return impl->RunScript(swapchain_size, time);
   }

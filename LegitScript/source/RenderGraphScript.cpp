@@ -4,7 +4,7 @@
 #include <algorithm>
 #include "AngelscriptWrapper/angelscript-cpp.h"
 #include <iostream>
-
+#include <assert.h>
 namespace ls
 {
 std::string ArgTypeToAsType(ls::ArgDesc::ArgType arg_type)
@@ -53,6 +53,8 @@ void AddScriptInvocationAsArg(ScriptShaderInvocation &invocation, asIScriptGener
     if(dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in) == ls::DecoratedPodType::AccessQualifiers::out)
     {
       auto script_img = *(ls::Image*)gen->GetArgObject(param_idx);
+      if(script_img.mip_range.y - script_img.mip_range.x != 1)
+        throw std::runtime_error("Can't bind render target with more than 1 mip");
       invocation.color_attachments.push_back(script_img);
     }else
     {
@@ -94,11 +96,15 @@ struct RenderGraphScript::Impl
 {
   Impl(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func);
   void LoadScript(std::string script_src, const std::vector<ls::PassDecl> &pass_decls);
-  ScriptCalls RunScript(ivec2 swapchain_size, float time);
+  ScriptEvents RunScript(ivec2 swapchain_size, float time);
 private:
   void RecreateAsScriptEngine(const std::vector<ls::PassDecl> &pass_decls);
   void RegisterAsScriptPassFunctions(const std::vector<ls::PassDecl> &pass_decls);
   void RegisterAsScriptGlobals();
+  void RegisterImageType();
+  template<typename VecType, size_t CompCount>
+  void RegisterVecType(std::string type_name, std::string comp_type_name);
+
 
   struct ImageInfo
   {
@@ -124,14 +130,14 @@ private:
   std::unique_ptr<as::ScriptEngine> as_script_engine;
   std::optional<asIScriptFunction*> as_script_func;
   ScriptState script_state;
-  ScriptCalls script_calls;
+  ScriptEvents script_events;
 };
 
 void RenderGraphScript::LoadScript(std::string script_src, const std::vector<ls::PassDecl> &pass_decls)
 {
   impl->LoadScript(script_src, pass_decls);
 }
-ScriptCalls RenderGraphScript::RunScript(ivec2 swapchain_size, float time)
+ScriptEvents RenderGraphScript::RunScript(ivec2 swapchain_size, float time)
 {
   return impl->RunScript(swapchain_size, time);
 }
@@ -158,9 +164,9 @@ void RenderGraphScript::Impl::LoadScript(std::string script_src, const std::vect
   this->as_script_func = mod->GetFunctionByName("main");
 }
 
-ScriptCalls RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
+ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
 {
-  script_calls = ScriptCalls();
+  script_events = ScriptEvents();
 
   image_infos.clear();
   image_infos.push_back({swapchain_size, ls::PixelFormats::rgba8});
@@ -171,22 +177,24 @@ ScriptCalls RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
   }
   catch(const std::exception &e)
   {
-    std::cout << "Script runtime exception: " << e.what() << "\n";
+    script_events.errors.push_back(std::string("Script runtime exception: ") + e.what() + "\n");
   }
-  return script_calls;
+  return script_events;
 }
 void RenderGraphScript::Impl::RecreateAsScriptEngine(const std::vector<ls::PassDecl> &pass_decls)
 {
   this->as_script_engine.reset();
-  this->as_script_engine = as::ScriptEngine::Create([](const asSMessageInfo *msg){
-    const char *type = "ERR ";
-    if( msg->type == asMSGTYPE_WARNING ) 
-      type = "WARN";
-    else if( msg->type == asMSGTYPE_INFORMATION ) 
-      type = "INFO";
+  this->as_script_engine = as::ScriptEngine::Create(
+    [](const asSMessageInfo *msg){
+      const char *type = "ERR ";
+      if( msg->type == asMSGTYPE_WARNING ) 
+        type = "WARN";
+      else if( msg->type == asMSGTYPE_INFORMATION ) 
+        type = "INFO";
 
-    std::printf("%s (%d, %d) : %s : %s\n", msg->section, msg->row, msg->col, type, msg->message);
-  });
+      std::printf("%s (%d, %d) : %s : %s\n", msg->section, msg->row, msg->col, type, msg->message);
+    }
+  );
   RegisterAsScriptGlobals();
   RegisterAsScriptPassFunctions(pass_decls);
 }
@@ -198,9 +206,7 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     {"rgba8", int(ls::PixelFormats::rgba8)},
     {"rgba16f", int(ls::PixelFormats::rgba16f)},
     {"rgba32f", int(ls::PixelFormats::rgba32f)}
-  });
-  as_script_engine->RegisterType<ls::Image>("Image");
-  
+  });  
   as_script_engine->RegisterGlobalFunction("int SliderInt(string name, int min_val, int max_val, int def_val = 0)", [this](asIScriptGeneric *gen)
   {
     std::string *name = (std::string*)gen->GetArgObject(0);
@@ -234,7 +240,39 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     std::string text = *(std::string*)gen->GetArgObject(0);
     this->text_func(text);
   });
-  
+  RegisterVecType<ls::vec2, 2>("vec2", "float");
+  RegisterVecType<ls::vec3, 3>("vec3", "float");
+  RegisterVecType<ls::vec4, 4>("vec4", "float");
+  RegisterVecType<ls::ivec2, 2>("ivec2", "int");
+  RegisterVecType<ls::ivec3, 3>("ivec3", "int");
+  RegisterVecType<ls::ivec4, 4>("ivec4", "int");
+  RegisterImageType();
+}
+
+void RenderGraphScript::Impl::RegisterImageType()
+{
+  as_script_engine->RegisterType<ls::Image>("Image");
+
+  as_script_engine->RegisterGlobalFunction("Image GetMippedImage(int width, int height, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
+  {
+    int width = gen->GetArgDWord(0);
+    int height = gen->GetArgDWord(1);
+    auto pixel_format = ls::PixelFormats(gen->GetArgDWord(2));
+    
+    ls::CachedImageRequest image_request;
+    Image::Id id = this->image_infos.size();
+    this->image_infos.push_back({ivec2{width, height}, pixel_format});
+
+    image_request.id = id;
+    image_request.pixel_format = pixel_format;
+    image_request.size = {width, height};    
+    this->script_events.cached_image_requests.push_back(image_request);
+
+    ls::Image img;
+    img.id = id;
+    img.mip_range = ivec2{0, int(this->image_infos[id].GetMipsCount())};
+    gen->SetReturnObject(&img);
+  });
   as_script_engine->RegisterGlobalFunction("Image GetImage(int width, int height, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
   {
     int width = gen->GetArgDWord(0);
@@ -248,11 +286,11 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     image_request.id = id;
     image_request.pixel_format = pixel_format;
     image_request.size = {width, height};    
-    this->script_calls.cached_image_requests.push_back(image_request);
+    this->script_events.cached_image_requests.push_back(image_request);
 
     ls::Image img;
     img.id = id;
-    img.mip_range = ivec2{0, int(this->image_infos[id].GetMipsCount())};
+    img.mip_range = ivec2{0, 1};
     gen->SetReturnObject(&img);
   });
   as_script_engine->RegisterGlobalFunction("Image GetSwapchainImage()", [this](asIScriptGeneric *gen)
@@ -270,15 +308,147 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     ls::Image dst_img;
     dst_img.id = src_img.id;
     int dst_mip = src_img.mip_range.x + mip_level;
+    if(dst_mip >= src_img.mip_range.y)
+    {
+      throw std::runtime_error(std::string("Requested mip ") + std::to_string(mip_level) + " but there are only " + std::to_string(src_img.mip_range.y - src_img.mip_range.x));
+    }
+    
     int mip = std::clamp<int>(dst_mip, 0, this->image_infos[src_img.id].GetMipsCount() - 1);
     dst_img.mip_range = ivec2{mip, mip + 1};
 
     gen->SetReturnObject(&dst_img);
   });
-  as_script_engine->RegisterGlobalFunction("void PrintImg(Image img)", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterMethod("Image", "ivec2 GetSize() const", [this](asIScriptGeneric *gen)
   {
-    auto img = *(ls::Image*)gen->GetArgObject(0);
-    std::cout << "Img id: " << img.id << " [" << img.mip_range.x << ", " << img.mip_range.y << "]\n";
+    auto *this_ptr = (ls::Image*)gen->GetObject();
+    ivec2 mip_size = this->image_infos[this_ptr->id].GetMipSize(this_ptr->mip_range.x);
+    gen->SetReturnObject(&mip_size);
+  });
+  as_script_engine->RegisterMethod("Image", "int GetMipsCount() const", [this](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (ls::Image*)gen->GetObject();
+    int mips_count = this_ptr->mip_range.y - this_ptr->mip_range.x;
+    gen->SetReturnDWord(mips_count);
+  });
+  as_script_engine->RegisterMethod("Image", "void Print()", [this](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (ls::Image*)gen->GetObject();
+    std::cout << "Img id: " << this_ptr->id << " [" << this_ptr->mip_range.x << ", " << this_ptr->mip_range.y << "]\n";
+  });
+}
+
+template<typename T> T GetArg(asIScriptGeneric *gen, size_t arg_idx) {assert(0);}
+template<> float GetArg<float>(asIScriptGeneric *gen, size_t arg_idx){return gen->GetArgFloat(arg_idx);}
+template<> int GetArg<int>(asIScriptGeneric *gen, size_t arg_idx){return gen->GetArgDWord(arg_idx);}
+
+
+template<typename VecType, typename CompType>
+CompType GetComp(const VecType &v, size_t idx)
+{
+  assert(idx * sizeof(CompType) <= sizeof(VecType));
+  const CompType *first = &(v.x);
+  return first[idx];
+}
+template<typename VecType, typename CompType>
+void SetComp(VecType &v, size_t idx, CompType c)
+{
+  assert(idx * sizeof(CompType) <= sizeof(VecType));
+  CompType *first = &(v.x);
+  first[idx] = c;
+}
+
+template<typename VecType, size_t CompCount>
+void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string comp_type_name)
+{
+  using CompType = decltype(VecType::x);
+  assert(sizeof(VecType) == sizeof(CompType) * CompCount);
+  as_script_engine->RegisterType<VecType>(type_name.c_str());
+  std::string comp_names[] = {"x", "y", "z", "w"};
+  std::string constr_decl = "void f(";
+  bool is_first = true;
+  for(size_t i = 0; i < CompCount; i++)
+  {
+    if(!is_first)
+      constr_decl += ", ";
+    is_first = false;
+    std::string member_decl = comp_type_name + " " + comp_names[i];
+    as_script_engine->RegisterMember(type_name.c_str(), member_decl.c_str(), sizeof(CompType) * i);
+    constr_decl += member_decl;
+  }
+  constr_decl += ")";
+  as_script_engine->RegisterConstructor(type_name.c_str(), constr_decl.c_str(), [](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(*this_ptr, i, GetArg<CompType>(gen, i));
+    }
+  });
+
+  as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opAdd(" + type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto *other_ptr = (VecType*)gen->GetArgObject(0);
+    VecType res;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(res, i, GetComp<VecType, CompType>(*this_ptr, i) + GetComp<VecType, CompType>(*other_ptr, i));
+    }
+    gen->SetReturnObject(&res);
+  });
+  as_script_engine->RegisterMethod(type_name.c_str(), "string opAdd_r(string) const", [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto *other_ptr = (std::string*)gen->GetArgObject(0);
+    std::string res_str = *other_ptr + "[";
+      bool is_first = true;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      if(!is_first)
+        res_str += ", ";
+      is_first = false;
+      res_str += std::to_string(GetComp<VecType, CompType>(*this_ptr, i));
+    }
+    res_str += "]";
+    gen->SetReturnObject(&res_str);
+  });
+  as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opMul(" + type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto *other_ptr = (VecType*)gen->GetArgObject(0);
+    VecType res;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(res, i, GetComp<VecType, CompType>(*this_ptr, i) * GetComp<VecType, CompType>(*other_ptr, i));
+    }
+    gen->SetReturnObject(&res);
+  });
+  as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opMul(" + comp_type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto other = GetArg<CompType>(gen, 0);
+    VecType res;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(res, i, GetComp<VecType, CompType>(*this_ptr, i) * other);
+    }
+    gen->SetReturnObject(&res);
+  });
+
+  as_script_engine->RegisterMethod(type_name.c_str(), "void Print()", [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    std::cout << "Printing " << type_name << ": [";
+    bool is_first = true;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      if(!is_first)
+        std::cout << ", ";
+      is_first = false;
+      auto comp = GetComp<VecType, CompType>(*this_ptr, i);
+      std::cout << comp;
+    }
+    std::cout << "]\n";
   });
 }
 
@@ -296,7 +466,7 @@ void RenderGraphScript::Impl::RegisterAsScriptPassFunctions(const std::vector<ls
       {
         AddScriptInvocationAsArg(invocation, gen, param_idx, pass_decl.arg_descs[param_idx]);
       }
-      this->script_calls.script_shader_invocations.push_back(invocation);
+      this->script_events.script_shader_invocations.push_back(invocation);
     });
   }
 }

@@ -26,12 +26,12 @@ void PrintShaderInvocation(const ls::ScriptShaderInvocation &inv)
 {
   std::cout << "Shader invocation: " << inv.shader_name << "\n";
 }
-void PrintScriptCalls(const ls::ScriptCalls script_calls)
+void PrintScriptEvents(const ls::ScriptEvents script_events)
 {
-  for(const auto &req : script_calls.cached_image_requests)
+  for(const auto &req : script_events.cached_image_requests)
     PrintCachedImgRequest(req);
   
-  for(const auto &inv : script_calls.script_shader_invocations)
+  for(const auto &inv : script_events.script_shader_invocations)
     PrintShaderInvocation(inv);
 }
 

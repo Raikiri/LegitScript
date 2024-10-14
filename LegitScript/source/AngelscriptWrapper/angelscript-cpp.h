@@ -49,15 +49,15 @@ namespace as
         else if( res == asEXECUTION_EXCEPTION )
         {
           std::string err;
-          err = "The script ended with an exception.";
+          err = "The script ended with an exception[\n";
 
           // Write some information about the script exception
           asIScriptFunction *func = context->ptr->GetExceptionFunction();
-          err += std::string("func: ") + std::string(func->GetDeclaration()) + "\n";
-          err += std::string("modl: ") + std::string(func->GetModuleName()) + "\n";
-          err += std::string("sect: ") + std::string(func->GetScriptSectionName()) + "\n";
-          err += std::string("line: ") + std::to_string(context->ptr->GetExceptionLineNumber()) + "\n";
-          err += std::string("desc: ") + std::string(context->ptr->GetExceptionString()) + "\n";
+          err += std::string("  func: ") + std::string(func->GetDeclaration()) + "\n";
+          //err += std::string("modl: ") + std::string(func->GetModuleName()) + "\n";
+          //err += std::string("sect: ") + std::string(func->GetScriptSectionName()) + "\n";
+          err += std::string("  line: ") + std::to_string(context->ptr->GetExceptionLineNumber()) + "\n";
+          err += std::string("  desc: ") + std::string(context->ptr->GetExceptionString()) + "\n]";
           throw std::runtime_error(err);
         }
         else
@@ -98,6 +98,24 @@ namespace as
       int res = this->ptr->RegisterObjectMethod(obj_type_name.c_str(), method_decl.c_str(), asFUNCTION(GlobalFunctionBindingDispatcher), asCALL_GENERIC, global_func_bindings.back().get());
       if(res < 0) throw std::runtime_error("Failed to register a global function");
     }
+    void RegisterMember(std::string obj_type_name, std::string member_decl, size_t offset)
+    {
+      int res = this->ptr->RegisterObjectProperty(obj_type_name.c_str(), member_decl.c_str(), offset);
+      if(res < 0) throw std::runtime_error("Failed to register a member");
+    }
+    void RegisterConstructor(std::string obj_type_name, std::string constr_decl, GlobalFunctionBinding::FuncType func)
+    {
+      global_func_bindings.emplace_back(std::unique_ptr<GlobalFunctionBinding>(new GlobalFunctionBinding(func)));
+      int res = this->ptr->RegisterObjectBehaviour(obj_type_name.c_str(), asBEHAVE_CONSTRUCT, constr_decl.c_str(), asFUNCTION(GlobalFunctionBindingDispatcher), asCALL_GENERIC, global_func_bindings.back().get());
+      if(res < 0) throw std::runtime_error("Failed to register a constructor");
+    }
+    void RegisterDestructor(std::string obj_type_name, GlobalFunctionBinding::FuncType func)
+    {
+      global_func_bindings.emplace_back(std::unique_ptr<GlobalFunctionBinding>(new GlobalFunctionBinding(func)));
+      int res = this->ptr->RegisterObjectBehaviour(obj_type_name.c_str(), asBEHAVE_DESTRUCT, "void f()", asFUNCTION(GlobalFunctionBindingDispatcher), asCALL_GENERIC, global_func_bindings.back().get());
+      if(res < 0) throw std::runtime_error("Failed to register a destructor");
+    }
+
     static void GlobalFunctionBindingDispatcher(asIScriptGeneric *gen)
     {
       auto binding = (GlobalFunctionBinding*)gen->GetAuxiliary();
@@ -107,6 +125,24 @@ namespace as
     {
       auto binding = (MessageCallbackBinding*)param;
       binding->func(msg);
+    }
+    static void ExceptionCallbackDispatcher(asIScriptContext *ctx, void *param)
+    {
+      try 
+      {
+        // Retrow the original exception so we can catch it again
+        throw;
+      }
+      catch( std::exception &e )
+      {
+        // Tell the VM the type of exception that occurred
+        ctx->SetException(e.what());
+      }
+      catch(...)
+      {
+        // The callback must not allow any exception to be thrown, but it is not necessary 
+        // to explicitly set an exception string if the default exception string is sufficient
+      }
     }
 
     asIScriptEngine *ptr;
@@ -140,7 +176,11 @@ namespace as
       {
         message_callback_binding = std::unique_ptr<MessageCallbackBinding>(new MessageCallbackBinding(message_func));
         int res = ptr->SetMessageCallback(asFUNCTION(MessageCallbackDispatcher), message_callback_binding.get(), asCALL_CDECL);
-        if(res < 0) throw std::runtime_error("Failed to set a callback");
+        if(res < 0) throw std::runtime_error("Failed to set a message callback");
+      }
+      {
+        int res = ptr->SetTranslateAppExceptionCallback(asFUNCTION(ExceptionCallbackDispatcher), nullptr, asCALL_CDECL);
+        if(res < 0) throw std::runtime_error("Failed to set an exception callback");
       }
     }
     std::unique_ptr<MessageCallbackBinding> message_callback_binding;

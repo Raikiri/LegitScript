@@ -1,5 +1,5 @@
 #pragma once
-#include "../include/LegitScriptCalls.h"
+#include "../include/LegitScriptEvents.h"
 #include <vector>
 #include <string>
 #include <variant>
