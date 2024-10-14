@@ -19,6 +19,16 @@ std::string ArgTypeToAsType(ls::ArgDesc::ArgType arg_type)
     }
     return PodTypeToString(dec_pod_type.type);
   }
+  if(std::holds_alternative<ls::DecoratedImageType>(arg_type))
+  {
+    auto dec_img_type = std::get<ls::DecoratedImageType>(arg_type);
+    return "Image";
+  }
+  if(std::holds_alternative<ls::SamplerTypes>(arg_type))
+  {
+    auto sampler_type = std::get<ls::SamplerTypes>(arg_type);
+    return "Image";
+  }
   throw std::runtime_error("Can't convert arg type to as type");
 }
 
@@ -304,19 +314,18 @@ void RenderGraphScript::Impl::RegisterImageType()
     img.mip_range = ivec2{0, int(this->image_infos[id].GetMipsCount())};
     gen->SetReturnObject(&img);
   });
-  as_script_engine->RegisterGlobalFunction("Image GetImage(int width, int height, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterGlobalFunction("Image GetImage(ivec2 size, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
   {
-    int width = gen->GetArgDWord(0);
-    int height = gen->GetArgDWord(1);
-    auto pixel_format = ls::PixelFormats(gen->GetArgDWord(2));
+    auto size = *(ls::ivec2*)gen->GetArgObject(0);
+    auto pixel_format = ls::PixelFormats(gen->GetArgDWord(1));
     
     ls::CachedImageRequest image_request;
     Image::Id id = this->image_infos.size();
-    this->image_infos.push_back({ivec2{width, height}, pixel_format});
+    this->image_infos.push_back({size, pixel_format});
 
     image_request.id = id;
     image_request.pixel_format = pixel_format;
-    image_request.size = {width, height};    
+    image_request.size = size;    
     this->script_events.cached_image_requests.push_back(image_request);
 
     ls::Image img;

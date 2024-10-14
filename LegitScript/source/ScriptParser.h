@@ -114,6 +114,7 @@ namespace ls
   };
   
   std::string PodTypeToString(ls::DecoratedPodType::PodTypes type);
+  std::string SamplerTypeToString(ls::SamplerTypes type);
   struct ScriptParser
   {
     ScriptParser();

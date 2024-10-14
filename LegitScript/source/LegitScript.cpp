@@ -1,6 +1,7 @@
 #include "../include/LegitScript.h"
 #include "ScriptParser.h"
 #include "RenderGraphScript.h"
+#include <assert.h>
 
 namespace ls
 {
@@ -26,6 +27,14 @@ namespace ls
         {
           desc.uniforms.push_back({type_name, arg.name});
         }
+      }else
+      if(std::holds_alternative<ls::SamplerTypes>(arg.type))
+      {
+        auto sampler_type = std::get<ls::SamplerTypes>(arg.type);
+        desc.samplers.push_back({SamplerTypeToString(sampler_type), arg.name});
+      }else
+      {
+        assert(0);
       }
     }
     return desc;

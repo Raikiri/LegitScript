@@ -259,9 +259,23 @@ namespace ls
       case PodTypes::vec3: return "vec3"; break;
       case PodTypes::vec4: return "vec4"; break;
       case PodTypes::int_: return "int"; break;
+      case PodTypes::ivec2: return "ivec2"; break;
+      case PodTypes::ivec3: return "ivec3"; break;
+      case PodTypes::ivec4: return "ivec4"; break;
       case PodTypes::void_: return "void"; break;
-      default: throw std::runtime_error("Can't generate as type");
+      default: throw std::runtime_error("Can't generate glsl type");
     }
   }
+  std::string SamplerTypeToString(ls::SamplerTypes type)
+  {
+    switch(type)
+    {
+      case ls::SamplerTypes::sampler1D: return "sampler1D"; break;
+      case ls::SamplerTypes::sampler2D: return "sampler2D"; break;
+      case ls::SamplerTypes::sampler3D: return "sampler3D"; break;
+      default: throw std::runtime_error("Can't generate glsl sampler type");
+    }
+  }
+
 
 }
