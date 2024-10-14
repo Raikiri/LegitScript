@@ -129,6 +129,13 @@ private:
   std::vector<ImageInfo> image_infos;
   std::unique_ptr<as::ScriptEngine> as_script_engine;
   std::optional<asIScriptFunction*> as_script_func;
+  struct Messages
+  {
+    std::vector<std::string> err;
+    std::vector<std::string> warn;
+    std::vector<std::string> info;
+  };
+  Messages curr_messages, compile_messages;
   ScriptState script_state;
   ScriptEvents script_events;
 };
@@ -160,8 +167,19 @@ void RenderGraphScript::Impl::LoadScript(std::string script_src, const std::vect
 {
   this->as_script_func.reset();
   RecreateAsScriptEngine(pass_decls);
-  auto mod = as_script_engine->LoadScript(script_src);
-  this->as_script_func = mod->GetFunctionByName("main");
+  this->compile_messages = Messages();
+  this->curr_messages = Messages();
+  try
+  {
+    auto mod = as_script_engine->LoadScript(script_src);
+    this->as_script_func = mod->GetFunctionByName("main");
+  }
+  catch(const std::exception &e)
+  {
+    this->curr_messages.err.push_back(e.what());
+  }
+  this->compile_messages = this->curr_messages;
+  this->curr_messages = Messages();
 }
 
 ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
@@ -177,7 +195,15 @@ ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time
   }
   catch(const std::exception &e)
   {
-    script_events.errors.push_back(std::string("Script runtime exception: ") + e.what() + "\n");
+    script_events.errors.push_back(e.what());
+  }
+  for(auto err : compile_messages.err)
+  {
+    script_events.errors.push_back(err);
+  }
+  for(auto warn : compile_messages.warn)
+  {
+    script_events.errors.push_back(warn);
   }
   return script_events;
 }
@@ -185,14 +211,14 @@ void RenderGraphScript::Impl::RecreateAsScriptEngine(const std::vector<ls::PassD
 {
   this->as_script_engine.reset();
   this->as_script_engine = as::ScriptEngine::Create(
-    [](const asSMessageInfo *msg){
-      const char *type = "ERR ";
-      if( msg->type == asMSGTYPE_WARNING ) 
-        type = "WARN";
-      else if( msg->type == asMSGTYPE_INFORMATION ) 
-        type = "INFO";
-
-      std::printf("%s (%d, %d) : %s : %s\n", msg->section, msg->row, msg->col, type, msg->message);
+    [this](const asSMessageInfo *msg){
+      std::string msg_str = std::string("[") + std::to_string(msg->row) + ":" + std::to_string(msg->col) + "]" + " " + msg->message;
+      if(msg->type == asMSGTYPE_ERROR)
+        this->curr_messages.err.push_back(msg_str);
+      if(msg->type == asMSGTYPE_WARNING)
+        this->curr_messages.warn.push_back(msg_str);
+      if(msg->type == asMSGTYPE_INFORMATION)
+        this->curr_messages.info.push_back(msg_str);
     }
   );
   RegisterAsScriptGlobals();
