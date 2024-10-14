@@ -176,7 +176,12 @@ void RenderGraphScript::Impl::LoadScript(std::string script_src, const std::vect
   }
   catch(const std::exception &e)
   {
-    this->curr_messages.err.push_back(e.what());
+    std::string err_str = e.what() + std::string(":\n");
+    for(auto err : curr_messages.err)
+    {
+      err_str += err + "\n";
+    }
+    throw std::runtime_error(err_str);
   }
   this->compile_messages = this->curr_messages;
   this->curr_messages = Messages();
