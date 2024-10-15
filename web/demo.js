@@ -2,8 +2,6 @@
 import Module from "./dist/LegitScriptWasm.js"
 import { CreateEditor } from './editor.js'
 
-const EditorStateLocalStorageKey = 'legitscript-demo-editor'
-
 Init(
   document.querySelector('#editor')
 )
@@ -22,16 +20,6 @@ function CompileLegitScript(legitScriptCompiler, content) {
     return false
   }
 }
-
-function PersistEditorState(editor, content) {
-  const viewState = editor.saveViewState()
-  // DEBUG: wire up persistence via local storage
-  window.localStorage.setItem(EditorStateLocalStorageKey, JSON.stringify({
-    viewState,
-    content: content
-  }))
-}
-
 
 const initialContent = `
   void ColorPass(in float r, in float g, in float b, out vec4 out_color)
@@ -64,15 +52,11 @@ async function Init(editorEl) {
   const legitScriptCompiler = await Module();
 
   const editor = await CreateEditor(editorEl, initialContent)
-  window.editor = editor;
   CompileLegitScript(legitScriptCompiler, editor.getModel().createSnapshot().read() || '')
-  window.model = editor.getModel()
-
   editor.getModel().onDidChangeContent((event) => {
-    let latestContent = editor.getModel().createSnapshot().read() || ''
-    CompileLegitScript(legitScriptCompiler, latestContent)
-    PersistEditorState(editor, latestContent)
+    CompileLegitScript(legitScriptCompiler, editor.getModel().createSnapshot().read() || '')
   })
 
-  console.log('LegitScriptFrame', JSON.parse(legitScriptCompiler.LegitScriptFrame(1024, 512, Date.now())))
+  // TODO: actually run frames
+  // console.log('LegitScriptFrame', JSON.parse(legitScriptCompiler.LegitScriptFrame(1024, 512, Date.now())))
 }
