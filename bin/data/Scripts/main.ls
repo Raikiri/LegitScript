@@ -14,7 +14,7 @@ void RenderGraphMain()
     vec3 v2 = vec3(1, 0, 3.1);
     ((v1 + v2) * 3).Print();
     
-    Image img = GetImage(128, 128, rgba8);
+    Image img = GetImage(ivec2(128, 128), rgba8);
     Text("Mips count: " + img.GetMipsCount() + ". Mip 2 size: " + img.GetMip(0).GetSize());
     
     //Image img = GetImage(128, 128, rgba8);

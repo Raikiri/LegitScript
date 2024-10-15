@@ -76,20 +76,21 @@ namespace ls
   std::string LoadScript(std::string script_source)
   {
     assert(instance);
+    json res_obj;
     try
     {
       shader_descs = instance->LoadScript(script_source);
-      return json::object({{"shader_descs", SerializeShaderDescs(shader_descs)}}).dump(2);
+      res_obj = json::object({{"shader_descs", SerializeShaderDescs(shader_descs)}});
     }
     catch(const ls::ScriptException &e)
     {
-      return SerializeScriptException(e);
+      res_obj = SerializeScriptException(e);
     }
     catch(const std::exception &e)
     {
-      return SerializeGenericException(e.what());
+      res_obj = SerializeGenericException(e.what());
     }
-    return SerializeGenericException("Wtf just happened");
+    return res_obj.dump(2);
   }
   
   std::string PixelFormatToStr(ls::PixelFormats format)
@@ -227,19 +228,20 @@ namespace ls
   std::string RunScript(int swapchain_width, int swapchain_height, float time)
   {
     assert(instance);
+    json res_obj;
     try
     {
       auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
-      return SerializeScriptEvents(script_events, shader_descs).dump(2);
+      res_obj = SerializeScriptEvents(script_events, shader_descs).dump(2);
     }
     catch(const ls::ScriptException &e)
     {
-      return SerializeScriptException(e);
+      res_obj = SerializeScriptException(e);
     }
     catch(const std::exception &e)
     {
-      return SerializeGenericException(e.what());
+      res_obj = SerializeGenericException(e.what());
     }
-    return SerializeGenericException("Wtf just happened");
+    return res_obj.dump(2);
   }
 }
