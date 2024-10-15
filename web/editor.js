@@ -1,7 +1,4 @@
 
-const LocalStorageVersion = '7'
-const EditorStateLocalStorageKey = 'shader-editor'
-
 export async function CreateEditor(editorEl, initialContent) {
   require.config({ paths: { vs: 'dependencies/monaco-editor/min/vs' } });
   const monaco = await new Promise(resolve => {
@@ -20,13 +17,4 @@ export async function CreateEditor(editorEl, initialContent) {
   })
   editor.focus()
   return editor
-}
-
-export function PersistEditorState(content, editor) {
-  const viewState = editor.saveViewState()
-  // DEBUG: wire up persistence via local storage
-  window.localStorage.setItem(EditorStateLocalStorageKey, JSON.stringify({
-    viewState,
-    content: content
-  }))
 }
