@@ -5,6 +5,7 @@
 #include <variant>
 #include <optional>
 #include <memory>
+#include <stdexcept>
 
 namespace ls
 {
@@ -106,6 +107,7 @@ namespace ls
     BlockDecl decl;
     Preamble preamble;
     std::string body;
+    size_t body_start;
   };
 
   struct ParsedScript
@@ -115,6 +117,23 @@ namespace ls
   
   std::string PodTypeToString(ls::DecoratedPodType::PodTypes type);
   std::string SamplerTypeToString(ls::SamplerTypes type);
+  
+  class ScriptParserException : public std::runtime_error
+  {
+  public:
+    ScriptParserException(
+      size_t line,
+      size_t column,
+      std::string desc) :
+      line(line),
+      column(column),
+      desc(desc),
+      std::runtime_error(std::string("[") + std::to_string(line) + ":" + std::to_string(column) + "]" + ":" + desc){}
+
+    size_t line;
+    size_t column;
+    std::string desc;
+  };
   struct ScriptParser
   {
     ScriptParser();

@@ -4,6 +4,7 @@
 #include <memory>
 #include "LegitScriptEvents.h"
 #include "LegitScriptCallbacks.h"
+#include "LegitExceptions.h"
 
 namespace ls
 {

@@ -57,12 +57,39 @@ namespace ls
     return arr;
   }
   
+  json SerializeScriptException(const ls::ScriptException &e)
+  {
+    auto obj = json::object();
+    obj["line"] = e.line;
+    obj["column"] = e.column;
+    if(e.func != "")
+      obj["func"] = e.func;
+    obj["desc"] = e.desc;
+    
+    return json::object({{"error", obj}});
+  }
+  json SerializeGenericException(const std::string &e)
+  {
+    return json::object({{"error", e}});
+  }
+  
   std::string LoadScript(std::string script_source)
   {
     assert(instance);
-    shader_descs = instance->LoadScript(script_source);
-    
-    return json::object({{"shader_descs", SerializeShaderDescs(shader_descs)}}).dump(2);
+    try
+    {
+      shader_descs = instance->LoadScript(script_source);
+      return json::object({{"shader_descs", SerializeShaderDescs(shader_descs)}}).dump(2);
+    }
+    catch(const ls::ScriptException &e)
+    {
+      return SerializeScriptException(e);
+    }
+    catch(const std::exception &e)
+    {
+      return SerializeGenericException(e.what());
+    }
+    return SerializeGenericException("Wtf just happened");
   }
   
   std::string PixelFormatToStr(ls::PixelFormats format)
@@ -192,14 +219,27 @@ namespace ls
     return json::object({
       {"cached_img_requests", SerializeCachedImgRequests(script_events.cached_image_requests)},
       {"loaded_img_requests", json::array()},
-      {"shader_invocations", SerializeShaderInvocations(script_events.script_shader_invocations, shader_descs)},
-      {"errors", json::array({script_events.errors})}
+      {"shader_invocations", SerializeShaderInvocations(script_events.script_shader_invocations, shader_descs)}
     });
   }
+
+  
   std::string RunScript(int swapchain_width, int swapchain_height, float time)
   {
     assert(instance);
-    auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
-    return SerializeScriptEvents(script_events, shader_descs).dump(2);
+    try
+    {
+      auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
+      return SerializeScriptEvents(script_events, shader_descs).dump(2);
+    }
+    catch(const ls::ScriptException &e)
+    {
+      return SerializeScriptException(e);
+    }
+    catch(const std::exception &e)
+    {
+      return SerializeGenericException(e.what());
+    }
+    return SerializeGenericException("Wtf just happened");
   }
 }

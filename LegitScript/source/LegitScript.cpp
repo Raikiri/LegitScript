@@ -50,36 +50,73 @@ namespace ls
     ls::ScriptShaderDescs LoadScript(std::string script_source)
     {
       ls::ScriptShaderDescs shader_descs;
-      auto parsed_script = script_parser.Parse(script_source);
-      std::vector<PassDecl> pass_decls;
-      for(const auto &block : parsed_script.blocks)
+      try
       {
-        if(block.decl.has_value() && std::holds_alternative<ls::PassDecl>(block.decl.value()))
+        auto parsed_script = script_parser.Parse(script_source);
+        std::vector<PassDecl> pass_decls;
+        for(const auto &block : parsed_script.blocks)
         {
-          auto pass_decl = std::get<ls::PassDecl>(block.decl.value());
-          pass_decls.push_back(pass_decl);
-          
-          shader_descs.push_back(CreateShaderDesc(pass_decl, block.preamble, block.body));
+          if(block.decl.has_value() && std::holds_alternative<ls::PassDecl>(block.decl.value()))
+          {
+            auto pass_decl = std::get<ls::PassDecl>(block.decl.value());
+            pass_decls.push_back(pass_decl);
+            
+            shader_descs.push_back(CreateShaderDesc(pass_decl, block.preamble, block.body));
+          }
         }
-      }
-      
-      for(const auto &block : parsed_script.blocks)
-      {
-        if(block.decl.has_value() && std::holds_alternative<ls::RenderGraphDecl>(block.decl.value()))
+        
+        for(const auto &block : parsed_script.blocks)
         {
-          auto render_graph_decl = std::get<ls::RenderGraphDecl>(block.decl.value());
-          render_graph_script.LoadScript(block.body, pass_decls);
+          if(block.decl.has_value() && std::holds_alternative<ls::RenderGraphDecl>(block.decl.value()))
+          {
+            auto render_graph_decl = std::get<ls::RenderGraphDecl>(block.decl.value());
+            try
+            {
+              this->render_graph_block_start = block.body_start;
+              render_graph_script.LoadScript(block.body, pass_decls);
+            }
+            catch(const ls::RenderGraphBuildException &e)
+            {
+              throw ls::ScriptException(
+                e.line + render_graph_block_start - 1, //-1 because line 1 corresponds to render_graph_block_start
+                e.column,
+                "",
+                e.desc
+              );
+            }
+          }
         }
-      }
 
-      return shader_descs;
+        return shader_descs;
+      }catch(const ls::ScriptParserException &e)
+      {
+        throw ls::ScriptException(
+          e.line,
+          e.column,
+          "",
+          e.desc
+        );
+      }
     }
     ls::ScriptEvents RunScript(ivec2 swapchain_size, float time)
     {
-      return render_graph_script.RunScript(swapchain_size, time);
+      try
+      {
+        return render_graph_script.RunScript(swapchain_size, time);
+      }
+      catch(const ls::RenderGraphRuntimeException &e)
+      {
+        throw ls::ScriptException(
+          e.line + this->render_graph_block_start - 1, //-1 because line 1 corresponds to render_graph_block_start
+          0,
+          e.func,
+          e.desc
+        );
+      }
     }
   private:
     ls::RenderGraphScript render_graph_script;
+    size_t render_graph_block_start = 0;
     ls::ScriptParser script_parser;
   };
   

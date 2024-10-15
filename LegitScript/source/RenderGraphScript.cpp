@@ -5,6 +5,7 @@
 #include "AngelscriptWrapper/angelscript-cpp.h"
 #include <iostream>
 #include <assert.h>
+
 namespace ls
 {
 std::string ArgTypeToAsType(ls::ArgDesc::ArgType arg_type)
@@ -139,13 +140,6 @@ private:
   std::vector<ImageInfo> image_infos;
   std::unique_ptr<as::ScriptEngine> as_script_engine;
   std::optional<asIScriptFunction*> as_script_func;
-  struct Messages
-  {
-    std::vector<std::string> err;
-    std::vector<std::string> warn;
-    std::vector<std::string> info;
-  };
-  Messages curr_messages, compile_messages;
   ScriptState script_state;
   ScriptEvents script_events;
 };
@@ -177,24 +171,8 @@ void RenderGraphScript::Impl::LoadScript(std::string script_src, const std::vect
 {
   this->as_script_func.reset();
   RecreateAsScriptEngine(pass_decls);
-  this->compile_messages = Messages();
-  this->curr_messages = Messages();
-  try
-  {
-    auto mod = as_script_engine->LoadScript(script_src);
-    this->as_script_func = mod->GetFunctionByName("main");
-  }
-  catch(const std::exception &e)
-  {
-    std::string err_str = e.what() + std::string(":\n");
-    for(auto err : curr_messages.err)
-    {
-      err_str += err + "\n";
-    }
-    throw std::runtime_error(err_str);
-  }
-  this->compile_messages = this->curr_messages;
-  this->curr_messages = Messages();
+  auto mod = as_script_engine->LoadScript(script_src);
+  this->as_script_func = mod->GetFunctionByName("main");
 }
 
 ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
@@ -203,23 +181,20 @@ ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time
 
   image_infos.clear();
   image_infos.push_back({swapchain_size, ls::PixelFormats::rgba8});
-  try
+  if(this->as_script_func)
   {
-    if(this->as_script_func)
-      as_script_engine->RunScript(this->as_script_func.value());
+    auto opt_err = as_script_engine->RunScript(this->as_script_func.value());
+    if(opt_err)
+    {
+      throw ls::RenderGraphRuntimeException(
+        opt_err->line_number,
+        opt_err->func_decl,
+        opt_err->exception_str
+      );
+    }
   }
-  catch(const std::exception &e)
-  {
-    script_events.errors.push_back(e.what());
-  }
-  for(auto err : compile_messages.err)
-  {
-    script_events.errors.push_back(err);
-  }
-  for(auto warn : compile_messages.warn)
-  {
-    script_events.errors.push_back(warn);
-  }
+  else
+    throw std::runtime_error("No script loaded");
   return script_events;
 }
 void RenderGraphScript::Impl::RecreateAsScriptEngine(const std::vector<ls::PassDecl> &pass_decls)
@@ -228,12 +203,11 @@ void RenderGraphScript::Impl::RecreateAsScriptEngine(const std::vector<ls::PassD
   this->as_script_engine = as::ScriptEngine::Create(
     [this](const asSMessageInfo *msg){
       std::string msg_str = std::string("[") + std::to_string(msg->row) + ":" + std::to_string(msg->col) + "]" + " " + msg->message;
-      if(msg->type == asMSGTYPE_ERROR)
-        this->curr_messages.err.push_back(msg_str);
-      if(msg->type == asMSGTYPE_WARNING)
-        this->curr_messages.warn.push_back(msg_str);
-      if(msg->type == asMSGTYPE_INFORMATION)
-        this->curr_messages.info.push_back(msg_str);
+      if(msg->type == asMSGTYPE_ERROR || msg->type == asMSGTYPE_WARNING)
+        throw ls::RenderGraphBuildException(
+          msg->row,
+          msg->col,
+          msg->message);
     }
   );
   RegisterAsScriptGlobals();

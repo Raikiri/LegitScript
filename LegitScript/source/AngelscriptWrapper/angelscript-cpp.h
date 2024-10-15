@@ -5,7 +5,6 @@
 #include <string>
 #include <stdexcept>
 #include <scriptstdstring/scriptstdstring.h>
-
 namespace as
 {
   struct ScriptEngine
@@ -35,7 +34,14 @@ namespace as
       if( res < 0 ) throw std::runtime_error("Failed to build the script");
       return mod;
     }
-    void RunScript(asIScriptFunction *func)
+    
+    struct RuntimeException
+    {
+      size_t line_number;
+      std::string func_decl;
+      std::string exception_str;
+    };
+    std::optional<RuntimeException> RunScript(asIScriptFunction *func)
     {
       auto context = this->CreateContext();
       context->ptr->Prepare(func);
@@ -48,21 +54,17 @@ namespace as
           throw std::runtime_error("Script aborted");
         else if( res == asEXECUTION_EXCEPTION )
         {
-          std::string err;
-          err = "The script ended with an exception[\n";
-
-          // Write some information about the script exception
           asIScriptFunction *func = context->ptr->GetExceptionFunction();
-          err += std::string("  func: ") + std::string(func->GetDeclaration()) + "\n";
-          //err += std::string("modl: ") + std::string(func->GetModuleName()) + "\n";
-          //err += std::string("sect: ") + std::string(func->GetScriptSectionName()) + "\n";
-          err += std::string("  line: ") + std::to_string(context->ptr->GetExceptionLineNumber()) + "\n";
-          err += std::string("  desc: ") + std::string(context->ptr->GetExceptionString()) + "\n]";
-          throw std::runtime_error(err);
+          RuntimeException exc;
+          exc.line_number = context->ptr->GetExceptionLineNumber();
+          exc.func_decl = func->GetDeclaration();
+          exc.exception_str = context->ptr->GetExceptionString();
+          return exc;
         }
         else
           throw std::runtime_error("Who the fuck knows what went wrong");
       }
+      return std::nullopt;
     }
     
     struct GlobalFunctionBinding
@@ -128,20 +130,17 @@ namespace as
     }
     static void ExceptionCallbackDispatcher(asIScriptContext *ctx, void *param)
     {
-      try 
+      try
       {
-        // Retrow the original exception so we can catch it again
+        // Retrow the original exception so we can catch it again higher up
         throw;
       }
-      catch( std::exception &e )
+      catch(const std::exception &e)
       {
-        // Tell the VM the type of exception that occurred
         ctx->SetException(e.what());
       }
       catch(...)
       {
-        // The callback must not allow any exception to be thrown, but it is not necessary 
-        // to explicitly set an exception string if the default exception string is sufficient
       }
     }
 

@@ -49,7 +49,11 @@ namespace ls
     Impl()
     {
       parser.set_logger([](size_t line, size_t col, const std::string& msg, const std::string &rule) {
-        std::cerr << line << ":" << col << ": " << msg << "\n";
+        throw ls::ScriptParserException(
+          line,
+          col,
+          msg
+        );
       });
       
       parser.load_grammar(GetScriptGrammar());
@@ -63,14 +67,28 @@ namespace ls
         }
         return script;
       };
-      
+
+      struct BlockBody
+      {
+        std::string text;
+        size_t start;
+      };      
       parser["Block"] = [](const peg::SemanticValues &vs) -> Block
       {
         Block block;
         block.preamble = std::any_cast<Preamble>(vs[0]);
         block.decl = vs[1].has_value() ? std::any_cast<BlockDecl>(vs[1]) : BlockDecl();
-        block.body = std::any_cast<std::string>(vs[2]);
+        auto body = std::any_cast<BlockBody>(vs[2]);
+        block.body = body.text;
+        block.body_start = body.start;
         return block;
+      };
+      parser["BlockBody"] = [](const peg::SemanticValues &vs) -> BlockBody
+      {
+        BlockBody body;
+        body.text = vs.token_to_string();
+        body.start = vs.line_info().first;
+        return body;
       };
 
       parser["Preamble"] = [](const peg::SemanticValues &vs) -> Preamble
@@ -121,12 +139,6 @@ namespace ls
         pass_decl.name = std::any_cast<std::string>(vs[1]);
         pass_decl.arg_descs = std::any_cast<ArgDescs>(vs[2]);
         return pass_decl;
-      };
-
-      
-      parser["BlockBody"] = [](const peg::SemanticValues &vs) -> std::string
-      {
-        return vs.token_to_string();
       };
 
       parser["ArgDescs"] = [](const peg::SemanticValues &vs) -> ArgDescs
