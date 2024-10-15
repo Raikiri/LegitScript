@@ -186,7 +186,9 @@ Script calls output:
   ]
 }
 ```
-# Dependencies (bundled in)
+# Dependencies
+LegitScript has no external dependencies, which allows us to build it with emscripten for webassembly. There are two dependecies bundled in:
+
 `cpp-peglib` is used to parse LegitScript syntax: https://github.com/yhirose/cpp-peglib
 
 `angelscript` is used as the interpreter of the render graph code: https://www.angelcode.com/angelscript/
