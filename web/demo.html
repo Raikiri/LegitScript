@@ -5,9 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LegitScriptEmscripten Demo</title>
 
-  <script type="module" src="./demo.js"></script>
+  <style>
+    html {
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 1em;
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    textarea#editor {
+      background-color: #222;
+      color: #fff;
+      height: 500px;
+      width:90%;
+      padding: 1em;
+    }
+
+    #compilation-result {
+      background-color: #222;
+      color: #fff;
+      height: 500px;
+      width:90%;
+      padding: 1em;
+    }
+  </style>
+
 </head>
 <body>
 
+  <section>
+    <textarea id="editor">
+void ColorPass(in float r, in float g, in float b, out vec4 out_color)
+{{
+  void main()
+  {
+    out_color = vec4(r, g, b + 0.5f, 1.0f);
+  }
+}}
+
+void RenderGraphMain()
+{{
+  void main()
+  {
+    Image img = GetImage(ivec2(128, 128), rgba8);
+    ColorPass(
+      SliderFloat("R", 0.0f, 1.0f) + 0.5f,
+      SliderFloat("G", 0.0f, 1.0f),
+      SliderFloat("B", 0.0f, 1.0f),
+      GetSwapchainImage());
+    int a = SliderInt("Int param", -42, 42, 5);
+    float b = SliderFloat("Float param", -42.0f, 42.0f);
+    //float e = SliderFloat("Float param", -42.0f, 42.0f);
+    Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
+  }
+}}
+    </textarea>
+    <h2>result</h2>
+    <pre id="compilation-result">
+    </pre>
+    <script type="module" src="./demo.js"></script>
+  </section>
 </body>
+
 </html>

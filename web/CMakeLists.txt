@@ -11,7 +11,7 @@ target_link_libraries(LegitScriptWasm PUBLIC embind)
 target_link_libraries(LegitScriptWasm PRIVATE LegitScript)
 target_link_options(LegitScriptWasm PRIVATE
   -sEXPORT_ES6=1
-  -sEXCEPTION_CATCHING_ALLOWED=LegitScriptToJSON
+  -sEXCEPTION_CATCHING_ALLOWED=LegitScriptLoad,LegitScriptFrame
 )
 
 #install(TARGETS LegitScriptWasm DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist/)
