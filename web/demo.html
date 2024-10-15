@@ -5,9 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LegitScriptEmscripten Demo</title>
 
-  <script type="module" src="./demo.js"></script>
+  <style>
+    html {
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 1em;
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+
+    }
+
+    #compilation-result {
+      background-color: #111;
+      color: #fff;
+      height: 500px;
+      padding: 1em;
+    }
+  </style>
+
 </head>
 <body>
 
+  <section>
+    <div id="editor" style="height:512px; width: 100%" ></div>
+    <h2>result</h2>
+    <pre id="compilation-result">
+    </pre>
+    <script src="dependencies/monaco-editor/min/vs/loader.js"></script>
+    <script type="module" src="./demo.js"></script>
+  </section>
 </body>
 </html>

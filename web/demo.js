@@ -1,36 +1,78 @@
+
 import Module from "./dist/LegitScriptWasm.js"
+import { CreateEditor } from './editor.js'
 
-(async () => {
-  const m = await Module();
+const EditorStateLocalStorageKey = 'legitscript-demo-editor'
 
-  const result = m.LegitScriptLoad(`
-    void ColorPass(in float r, in float g, in float b, out vec4 out_color)
-    {{
-      void main()
-      {
-        out_color = vec4(r, g, b + 0.5f, 1.0f);
-      }
-    }}
+Init(
+  document.querySelector('#editor')
+)
 
-    void RenderGraphMain()
-    {{
-      void main()
-      {
-        Image img = GetImage(128, 128, rgba8);
-        ColorPass(
-          SliderFloat("R", 0.0f, 1.0f) + 0.5f,
-          SliderFloat("G", 0.0f, 1.0f),
-          SliderFloat("B", 0.0f, 1.0f),
-          GetSwapchainImage());
-        int a = SliderInt("Int param", -42, 42, 5);
-        float b = SliderFloat("Float param", -42.0f, 42.0f);
-        //float e = SliderFloat("Float param", -42.0f, 42.0f);
-        Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
-      }
-    }}
-  `)
-  console.log('LegitScriptLoad result', JSON.parse(result))
+function CompileLegitScript(legitScriptCompiler, content) {
+  const debugOutputEl = document.getElementById('compilation-result')
 
-  console.log('LegitScriptFrame', JSON.parse(m.LegitScriptFrame(1024, 512, Date.now())))
+  try {
+    const result = legitScriptCompiler.LegitScriptLoad(content)
+    debugOutputEl.innerText = result
+    debugOutputEl.style = 'border:2px solid green'
+    return true
+  } catch (e) {
+    debugOutputEl.innerText = `${e.name} ${e.message}\n ${e.stack}`
+    debugOutputEl.style = 'border:2px solid red'
+    return false
+  }
+}
 
-})();
+function PersistEditorState(editor, content) {
+  const viewState = editor.saveViewState()
+  // DEBUG: wire up persistence via local storage
+  window.localStorage.setItem(EditorStateLocalStorageKey, JSON.stringify({
+    viewState,
+    content: content
+  }))
+}
+
+
+const initialContent = `
+  void ColorPass(in float r, in float g, in float b, out vec4 out_color)
+  {{
+    void main()
+    {
+      out_color = vec4(r, g, b + 0.5f, 1.0f);
+    }
+  }}
+
+  void RenderGraphMain()
+  {{
+    void main()
+    {
+      Image img = GetImage(ivec2(128, 128), rgba8);
+      ColorPass(
+        SliderFloat("R", 0.0f, 1.0f) + 0.5f,
+        SliderFloat("G", 0.0f, 1.0f),
+        SliderFloat("B", 0.0f, 1.0f),
+        GetSwapchainImage());
+      int a = SliderInt("Int param", -42, 42, 5);
+      float b = SliderFloat("Float param", -42.0f, 42.0f);
+      //float e = SliderFloat("Float param", -42.0f, 42.0f);
+      Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
+    }
+  }}
+`
+
+async function Init(editorEl) {
+  const legitScriptCompiler = await Module();
+
+  const editor = await CreateEditor(editorEl, initialContent)
+  window.editor = editor;
+  CompileLegitScript(legitScriptCompiler, editor.getModel().createSnapshot().read() || '')
+  window.model = editor.getModel()
+
+  editor.getModel().onDidChangeContent((event) => {
+    let latestContent = editor.getModel().createSnapshot().read() || ''
+    CompileLegitScript(legitScriptCompiler, latestContent)
+    PersistEditorState(editor, latestContent)
+  })
+
+  console.log('LegitScriptFrame', JSON.parse(legitScriptCompiler.LegitScriptFrame(1024, 512, Date.now())))
+}
