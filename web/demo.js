@@ -11,7 +11,12 @@ function CompileLegitScript(legitScriptCompiler, content) {
   try {
     const result = legitScriptCompiler.LegitScriptLoad(content)
     debugOutputEl.innerText = result
-    debugOutputEl.style = 'border:2px solid green'
+
+    if (result.includes('"error":')) {
+      debugOutputEl.style = 'border:2px solid yellow'
+    } else {
+      debugOutputEl.style = 'border:2px solid green'
+    }
     return true
   } catch (e) {
     debugOutputEl.innerText = `${e.name} ${e.message}\n ${e.stack}`
