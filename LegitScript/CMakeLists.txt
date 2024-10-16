@@ -37,3 +37,14 @@ target_include_directories(LegitScript PRIVATE "${CPP_PEGLIB_INCLUDE_DIR}")
 target_include_directories(LegitScript PRIVATE "${ANGELSCRIPT_DIR}/include")
 target_include_directories(LegitScript PRIVATE "${ANGELSCRIPT_DIR}/add_on")
 target_include_directories(LegitScript PRIVATE "${JSON_INCLUDE_DIR}")
+
+if (EMSCRIPTEN)
+  target_link_options(LegitScript PRIVATE
+    -fexceptions
+  )
+
+  target_compile_options(LegitScript PRIVATE
+    -O2
+    -fexceptions
+  )
+endif()
