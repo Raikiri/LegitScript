@@ -30,7 +30,7 @@ std::string LegitScriptLoad(std::string source) {
   }
   catch(const std::exception &e)
   {
-    return json::object({{"error", e.what()}});
+    return json::object({{"Uncaught error: ", e.what()}});
   }
 }
 
@@ -42,7 +42,7 @@ std::string LegitScriptFrame(int swapchain_width, int swapchain_height, float ti
   }
   catch(const std::exception &e)
   {
-    return json::object({{"error", e.what()}});
+    return json::object({{"Uncaught error: ", e.what()}});
   }
 }
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <stdexcept>
 #include <scriptstdstring/scriptstdstring.h>
+#include <scriptmath/scriptmath.h>
+
 namespace as
 {
   struct ScriptEngine
@@ -169,6 +171,7 @@ namespace as
     {
       ptr = asCreateScriptEngine();
       RegisterStdString(ptr);
+      RegisterScriptMath_Generic(ptr);
       if(!ptr) throw std::runtime_error("Failed to start as engine");
       
       if(message_func)

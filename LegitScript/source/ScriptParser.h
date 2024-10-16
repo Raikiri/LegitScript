@@ -73,7 +73,11 @@ namespace ls
     int x, y, z;
   };
 
-  using PreambleSection = std::variant<DeclarationSection, IncludeSection, NumthreadsSection>;
+  struct RendergraphSection
+  {
+  };
+  
+  using PreambleSection = std::variant<RendergraphSection, BlendModes, DeclarationSection, IncludeSection, NumthreadsSection>;
   struct ArgDesc
   {
     using ArgType = std::variant<DecoratedPodType, DecoratedImageType, SamplerTypes>;
@@ -94,14 +98,9 @@ namespace ls
     ArgDescs arg_descs;
   };
   
-  struct RenderGraphDecl
-  {
-    ArgDescs arg_descs;
-  };
-
   using Preamble = std::vector<PreambleSection>;
   
-  using BlockDecl = std::optional<std::variant<PassDecl, RenderGraphDecl>>;
+  using BlockDecl = std::optional<PassDecl>;
   struct Block
   {
     BlockDecl decl;

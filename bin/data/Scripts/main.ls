@@ -6,6 +6,7 @@ void ColorPass(in float r, in float g, in float b, out vec4 out_color)
   }
 }}
 
+[rendergraph]
 void RenderGraphMain()
 {{
   void main()

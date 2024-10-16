@@ -17,13 +17,15 @@ namespace ls
         # Grammar for function parsing
         Script              <- Block*
         Block               <- Preamble BlockDecl '{{' BlockBody '}}'
-        BlockDecl           <- (RenderGraphDecl / PassDecl)?
+        BlockDecl           <- (PassDecl)?
         Preamble            <- (PreambleSection)*
-        PreambleSection     <- '[' (DeclarationSection / IncludeSection / NumthreadsSection) ']'
+        PreambleSection     <- '[' (RendergraphSection / BlendModeSection / DeclarationSection / IncludeSection / NumthreadsSection) ']'
+        RendergraphSection  <- 'rendergraph'
+        BlendModeSection    <- 'blendmode' ':' BlendMode
+        BlendMode           <- <'alphablend' | 'opaque' | 'additive'>
         DeclarationSection  <- 'declaration' ':' String
         IncludeSection      <- 'include' ':' StringArray
         NumthreadsSection   <- 'numthreads' Int3
-        RenderGraphDecl     <- 'void' 'RenderGraphMain' '(' ArgDescs ')'
         PassDecl            <- PodType Name '(' ArgDescs ')'
         BlockBody           <- (!('}}') .)*
         ArgDescs            <- ArgDesc? (',' ArgDesc)* 
@@ -101,6 +103,22 @@ namespace ls
         return preamble;
       };
 
+      parser["RendergraphSection"] = [](const peg::SemanticValues &vs) -> PreambleSection
+      {
+        return RendergraphSection();
+      };
+
+      parser["BlendModeSection"] = [](const peg::SemanticValues &vs) -> PreambleSection
+      {
+        return std::any_cast<BlendModes>(vs[0]);
+      };
+      
+      parser["BlendMode"] = [](const peg::SemanticValues &vs) -> BlendModes
+      {
+        return BlendModes(vs.choice());
+      };
+
+
       parser["DeclarationSection"] = [](const peg::SemanticValues &vs) -> PreambleSection
       {
         DeclarationSection section;
@@ -123,13 +141,6 @@ namespace ls
         section.y = vec.y;
         section.z = vec.z;
         return section;
-      };
-
-      parser["RenderGraphDecl"] = [](const peg::SemanticValues &vs) -> BlockDecl
-      {
-        RenderGraphDecl graph_decl;
-        graph_decl.arg_descs = std::any_cast<ArgDescs>(vs[0]);
-        return graph_decl;
       };
       
       parser["PassDecl"] = [](const peg::SemanticValues &vs) -> BlockDecl

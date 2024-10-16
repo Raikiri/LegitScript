@@ -11,6 +11,14 @@ namespace ls
     desc.body = body;
     desc.name = decl.name;
     desc.includes = "";
+    desc.blend_mode = BlendModes::opaque;
+    for(const auto &p : preamble)
+    {
+      if(std::holds_alternative<ls::BlendModes>(p))
+      {
+        desc.blend_mode = std::get<ls::BlendModes>(p);
+      }
+    }
     
     for(const auto &arg : decl.arg_descs)
     {
@@ -54,22 +62,25 @@ namespace ls
       {
         auto parsed_script = script_parser.Parse(script_source);
         std::vector<PassDecl> pass_decls;
-        for(const auto &block : parsed_script.blocks)
-        {
-          if(block.decl.has_value() && std::holds_alternative<ls::PassDecl>(block.decl.value()))
-          {
-            auto pass_decl = std::get<ls::PassDecl>(block.decl.value());
-            pass_decls.push_back(pass_decl);
-            
-            shader_descs.push_back(CreateShaderDesc(pass_decl, block.preamble, block.body));
-          }
-        }
         
         for(const auto &block : parsed_script.blocks)
         {
-          if(block.decl.has_value() && std::holds_alternative<ls::RenderGraphDecl>(block.decl.value()))
+          bool is_render_graph = false;
+          for(auto p : block.preamble)
           {
-            auto render_graph_decl = std::get<ls::RenderGraphDecl>(block.decl.value());
+            if(std::holds_alternative<ls::RendergraphSection>(p))
+            {
+              is_render_graph = true;
+            }
+          }
+          if(is_render_graph && !block.decl.has_value())
+          {
+            throw ls::ScriptException(
+              0, 0, "", "Render graph block has to have a declaration"
+            );
+          }
+          if(is_render_graph)
+          {
             try
             {
               this->render_graph_block_start = block.body_start;
@@ -84,6 +95,15 @@ namespace ls
                 e.desc
               );
             }
+          }else
+          {
+            if(block.decl.has_value())
+            {
+              auto pass_decl = block.decl.value();
+              pass_decls.push_back(pass_decl);
+              
+              shader_descs.push_back(CreateShaderDesc(pass_decl,  block.preamble, block.body));
+            }            
           }
         }
 

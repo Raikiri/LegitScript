@@ -27,6 +27,13 @@ namespace ls
     Id id;
     ivec2 mip_range;
   };
+  
+  enum struct BlendModes : int
+  {
+    opaque,
+    alphablend,
+    additive
+  };
 
 
   struct ScriptShaderDesc
@@ -58,6 +65,7 @@ namespace ls
     std::vector<Inouts> ins;
     std::vector<Inouts> outs;
     
+    BlendModes blend_mode;
     std::string name;
     std::string includes;
     std::string body;

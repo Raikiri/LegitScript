@@ -232,7 +232,7 @@ namespace ls
     try
     {
       auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
-      res_obj = SerializeScriptEvents(script_events, shader_descs).dump(2);
+      res_obj = SerializeScriptEvents(script_events, shader_descs);
     }
     catch(const ls::ScriptException &e)
     {
