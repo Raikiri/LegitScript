@@ -70,19 +70,12 @@ namespace ls
         return script;
       };
 
-      struct BlockBody
-      {
-        std::string text;
-        size_t start;
-      };      
       parser["Block"] = [](const peg::SemanticValues &vs) -> Block
       {
         Block block;
         block.preamble = std::any_cast<Preamble>(vs[0]);
         block.decl = vs[1].has_value() ? std::any_cast<BlockDecl>(vs[1]) : BlockDecl();
-        auto body = std::any_cast<BlockBody>(vs[2]);
-        block.body = body.text;
-        block.body_start = body.start;
+        block.body = std::any_cast<BlockBody>(vs[2]);
         return block;
       };
       parser["BlockBody"] = [](const peg::SemanticValues &vs) -> BlockBody

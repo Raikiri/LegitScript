@@ -1,3 +1,22 @@
+[declaration: "system"]
+{{
+  //very basic stuff
+}}
+
+[include: "system"]
+[declaration: "util"]
+{{
+  //some stuff
+  //more stuff
+}}
+
+[declaration: "rendergraph_includes"]
+{{
+  //more includes
+}}
+
+
+[include: "util"]
 void ColorPass(in vec3 in_color, out vec4 out_color)
 {{
   void main()
@@ -7,6 +26,7 @@ void ColorPass(in vec3 in_color, out vec4 out_color)
 }}
 
 [rendergraph]
+[include: "util", "rendergraph_includes"]
 void RenderGraphMain()
 {{
   void main()

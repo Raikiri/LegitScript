@@ -35,6 +35,11 @@ namespace ls
     additive
   };
 
+  struct BlockBody
+  {
+    std::string text;
+    size_t start;
+  };
 
   struct ScriptShaderDesc
   {
@@ -67,8 +72,9 @@ namespace ls
     
     BlendModes blend_mode;
     std::string name;
-    std::string includes;
-    std::string body;
+    
+    std::vector<std::string> includes;
+    BlockBody body;
   };
   using ScriptShaderDescs = std::vector<ScriptShaderDesc>;
 

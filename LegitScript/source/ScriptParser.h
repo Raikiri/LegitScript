@@ -99,14 +99,13 @@ namespace ls
   };
   
   using Preamble = std::vector<PreambleSection>;
-  
+
   using BlockDecl = std::optional<PassDecl>;
   struct Block
   {
     BlockDecl decl;
     Preamble preamble;
-    std::string body;
-    size_t body_start;
+    BlockBody body;
   };
 
   struct ParsedScript

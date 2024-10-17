@@ -40,6 +40,13 @@ namespace ls
     }
     return arr;
   }
+  json SerializeBlockBody(const ls::BlockBody &body)
+  {
+    return json::object({
+      {"start", body.start},
+      {"text", body.text}
+    });
+  }
   json SerializeShaderDescs(const ls::ScriptShaderDescs &descs)
   {
     auto arr = json::array();
@@ -47,7 +54,8 @@ namespace ls
     {
       json json_desc;
       json_desc["name"] = desc.name;
-      json_desc["body"] = desc.body;
+      json_desc["body"] = SerializeBlockBody(desc.body);
+      json_desc["includes"] = desc.includes;
       json_desc["samplers"] = SerializeSamplers(desc.samplers);
       json_desc["uniforms"] = SerializeUniforms(desc.uniforms);
       json_desc["outs"] = SerializeInouts(desc.outs);
