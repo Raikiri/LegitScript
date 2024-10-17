@@ -41,7 +41,7 @@ namespace ls
     size_t start;
   };
 
-  struct ScriptShaderDesc
+  struct ShaderDesc
   {
     struct Sampler
     {
@@ -76,9 +76,20 @@ namespace ls
     std::vector<std::string> includes;
     BlockBody body;
   };
-  using ScriptShaderDescs = std::vector<ScriptShaderDesc>;
+  using ShaderDescs = std::vector<ShaderDesc>;
+  struct Declaration
+  {
+    std::string name;
+    BlockBody body;
+  };
+  using Declarations = std::vector<Declaration>;
+  struct ScriptContents
+  {
+    ShaderDescs shader_descs;
+    Declarations declarations;
+  };
 
-  struct ScriptShaderInvocation
+  struct ShaderInvocation
   {
     std::string shader_name;
     std::vector<ls::Image> image_sampler_bindings;
@@ -127,6 +138,6 @@ namespace ls
   {
     std::vector<CachedImageRequest> cached_image_requests;
     std::vector<LoadedImageRequest> loaded_image_requests;
-    std::vector<ScriptShaderInvocation> script_shader_invocations;
+    std::vector<ShaderInvocation> script_shader_invocations;
   };
 }

@@ -54,7 +54,7 @@ std::string CreateAsPassFuncDeclaration(const ls::PassDecl &decl)
 }
 const Image::Id swapchain_img_id = 0;
 
-void AddScriptInvocationAsArg(ScriptShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::ArgDesc arg_desc)
+void AddScriptInvocationAsArg(ShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::ArgDesc arg_desc)
 {
   auto arg_type = arg_desc.type;
   if(std::holds_alternative<ls::DecoratedPodType>(arg_type))
@@ -493,7 +493,7 @@ void RenderGraphScript::Impl::RegisterAsScriptPassFunctions(const std::vector<ls
     std::string as_func_decl = CreateAsPassFuncDeclaration(pass_decl);
     this->as_script_engine->RegisterGlobalFunction(as_func_decl, [this, pass_decl](asIScriptGeneric *gen)
     {
-      ScriptShaderInvocation invocation;
+      ShaderInvocation invocation;
       invocation.shader_name = pass_decl.name;
       for(size_t param_idx = 0; param_idx < pass_decl.arg_descs.size(); param_idx++)
       {

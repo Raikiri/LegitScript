@@ -12,7 +12,7 @@ namespace ls
   {
     LegitScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func);
     ~LegitScript();
-    ls::ScriptShaderDescs LoadScript(std::string script_source);
+    ls::ScriptContents LoadScript(std::string script_source);
     ls::ScriptEvents RunScript(ivec2 swapchain_size, float time);
   private:
     struct Impl;

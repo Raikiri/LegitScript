@@ -6,14 +6,14 @@ namespace ls
 {
   using json = nlohmann::json;
   std::unique_ptr<ls::LegitScript> instance;
-  ls::ScriptShaderDescs shader_descs;
+  ls::ScriptContents script_contents;
   
   void InitScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func)
   {
     instance.reset(new ls::LegitScript(slider_float_func, slider_int_func, text_func));
   }
   
-  json SerializeSamplers(const std::vector<ls::ScriptShaderDesc::Sampler> samplers)
+  json SerializeSamplers(const std::vector<ls::ShaderDesc::Sampler> samplers)
   {
     auto arr = json::array();
     for(auto sampler : samplers)
@@ -22,7 +22,7 @@ namespace ls
     }
     return arr;
   }
-  json SerializeUniforms(const std::vector<ls::ScriptShaderDesc::Uniform> uniforms)
+  json SerializeUniforms(const std::vector<ls::ShaderDesc::Uniform> uniforms)
   {
     auto arr = json::array();
     for(auto uniform : uniforms)
@@ -31,7 +31,7 @@ namespace ls
     }
     return arr;
   }
-  json SerializeInouts(const std::vector<ls::ScriptShaderDesc::Inouts> inouts)
+  json SerializeInouts(const std::vector<ls::ShaderDesc::Inouts> inouts)
   {
     auto arr = json::array();
     for(auto inout : inouts)
@@ -47,7 +47,7 @@ namespace ls
       {"text", body.text}
     });
   }
-  json SerializeShaderDescs(const ls::ScriptShaderDescs &descs)
+  json SerializeShaderDescs(const ls::ShaderDescs &descs)
   {
     auto arr = json::array();
     for(auto desc : descs)
@@ -81,14 +81,30 @@ namespace ls
     return json::object({{"error", e}});
   }
   
+  json SerializeDeclarations(const ls::Declarations &decls)
+  {
+    auto arr = json::array();
+    for(auto decl : decls)
+    {
+      arr.push_back(json::object({
+        {"name", decl.name},
+        {"body", SerializeBlockBody(decl.body)},
+      }));
+    }
+    return arr;
+  }
+
   std::string LoadScript(std::string script_source)
   {
     assert(instance);
     json res_obj;
     try
     {
-      shader_descs = instance->LoadScript(script_source);
-      res_obj = json::object({{"shader_descs", SerializeShaderDescs(shader_descs)}});
+      script_contents = instance->LoadScript(script_source);
+      res_obj = json::object({
+        {"shader_descs", SerializeShaderDescs(script_contents.shader_descs)},
+        {"declarations", SerializeDeclarations(script_contents.declarations)}
+        });
     }
     catch(const ls::ScriptException &e)
     {
@@ -161,14 +177,14 @@ namespace ls
     if(type == "ivec4"){ assert(size == sizeof(ivec4)); return SerializeIVec4(*(ivec4*)ptr);}
     throw std::runtime_error("Unknown type: " + type);
   }
-  json SerializeUniform(void *ptr, size_t size, ls::ScriptShaderDesc::Uniform uniform_desc)
+  json SerializeUniform(void *ptr, size_t size, ls::ShaderDesc::Uniform uniform_desc)
   {
     return json::object({
       {"type", uniform_desc.type},
       {"val", SerializeUniformVal(ptr, size, uniform_desc.type)}
     });
   }
-  json SerializeUniforms(const std::vector<uint8_t> &uniform_data, const std::vector<ls::ScriptShaderInvocation::UniformValue> &uniform_vals, const std::vector<ls::ScriptShaderDesc::Uniform> &uniform_decls)
+  json SerializeUniforms(const std::vector<uint8_t> &uniform_data, const std::vector<ls::ShaderInvocation::UniformValue> &uniform_vals, const std::vector<ls::ShaderDesc::Uniform> &uniform_decls)
   {
     size_t uniform_idx;
     assert(uniform_vals.size() == uniform_decls.size());
@@ -195,12 +211,12 @@ namespace ls
     }
     return arr;
   }
-  json SerializeShaderInvocations(const std::vector<ls::ScriptShaderInvocation> &shader_invocations, const ls::ScriptShaderDescs &shader_descs)
+  json SerializeShaderInvocations(const std::vector<ls::ShaderInvocation> &shader_invocations, const ls::ShaderDescs &shader_descs)
   {
     auto arr = json::array();
     for(const auto &inv : shader_invocations)
     {
-      ls::ScriptShaderDesc matching_shader_desc;
+      ls::ShaderDesc matching_shader_desc;
       bool is_found = false;
       for(const auto &shader_desc : shader_descs)
       {
@@ -223,7 +239,7 @@ namespace ls
     }
     return arr;
   }
-  json SerializeScriptEvents(const ls::ScriptEvents &script_events, const ls::ScriptShaderDescs &shader_descs)
+  json SerializeScriptEvents(const ls::ScriptEvents &script_events, const ls::ShaderDescs &shader_descs)
   {
     return json::object({
       {"cached_img_requests", SerializeCachedImgRequests(script_events.cached_image_requests)},
@@ -240,7 +256,7 @@ namespace ls
     try
     {
       auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
-      res_obj = SerializeScriptEvents(script_events, shader_descs);
+      res_obj = SerializeScriptEvents(script_events, script_contents.shader_descs);
     }
     catch(const ls::ScriptException &e)
     {

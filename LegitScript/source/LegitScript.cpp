@@ -7,9 +7,9 @@
 #include "../include/SourceAssembler.h"
 namespace ls
 {
-  ls::ScriptShaderDesc CreateShaderDesc(const ls::PassDecl &decl, std::vector<std::string> flattened_includes, const ls::Preamble &preamble, ls::BlockBody body)
+  ls::ShaderDesc CreateShaderDesc(const ls::PassDecl &decl, std::vector<std::string> flattened_includes, const ls::Preamble &preamble, ls::BlockBody body)
   {
-    ls::ScriptShaderDesc desc;
+    ls::ShaderDesc desc;
     desc.body = body;
     desc.name = decl.name;
     desc.includes = flattened_includes;
@@ -125,9 +125,9 @@ namespace ls
     {
     }
     ~Impl(){}
-    ls::ScriptShaderDescs LoadScript(std::string script_source)
+    ls::ScriptContents LoadScript(std::string script_source)
     {
-      ls::ScriptShaderDescs shader_descs;
+      ls::ScriptContents script_contents;
       ls::ParsedScript parsed_script;
       try
       {
@@ -149,18 +149,31 @@ namespace ls
       for(size_t block_idx = 0; block_idx < parsed_script.blocks.size(); block_idx++)
       {
         const auto &block = parsed_script.blocks[block_idx];
-        if(!FindPreambleIsRendergraph(block.preamble) && block.decl.has_value())
+        if(!FindPreambleIsRendergraph(block.preamble))
         {
-          auto pass_decl = block.decl.value();
-          pass_decls.push_back(pass_decl);
-          std::vector<std::string> includes;
-          for(auto included_idx : flattened_include_graph[block_idx].adjacent_nodes)
+          if(block.decl.has_value())
           {
-            auto opt_name = FindPreambleDeclName(parsed_script.blocks[included_idx].preamble);
-            assert(opt_name);
-            includes.push_back(opt_name.value());
+            auto pass_decl = block.decl.value();
+            pass_decls.push_back(pass_decl);
+            std::vector<std::string> includes;
+            for(auto included_idx : flattened_include_graph[block_idx].adjacent_nodes)
+            {
+              auto opt_name = FindPreambleDeclName(parsed_script.blocks[included_idx].preamble);
+              assert(opt_name);
+              includes.push_back(opt_name.value());
+            }
+            script_contents.shader_descs.push_back(CreateShaderDesc(pass_decl, includes, block.preamble, block.body));
+          }else
+          {
+            auto opt_name = FindPreambleDeclName(parsed_script.blocks[block_idx].preamble);
+            if(opt_name)
+            {
+              ls::Declaration decl;
+              decl.body = block.body;
+              decl.name = opt_name.value();
+              script_contents.declarations.push_back(decl);
+            }
           }
-          shader_descs.push_back(CreateShaderDesc(pass_decl, includes, block.preamble, block.body));
         }
       }
       
@@ -199,8 +212,7 @@ namespace ls
         }
       }
 
-      return shader_descs;
-
+      return script_contents;
     }
     ls::ScriptEvents RunScript(ivec2 swapchain_size, float time)
     {
@@ -230,7 +242,7 @@ namespace ls
     return impl->RunScript(swapchain_size, time);
   }
 
-  ls::ScriptShaderDescs LegitScript::LoadScript(std::string script_source)
+  ls::ScriptContents LegitScript::LoadScript(std::string script_source)
   {
     return impl->LoadScript(script_source);
   }

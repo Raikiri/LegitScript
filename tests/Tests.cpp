@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-void PrintShaderDesc(const ls::ScriptShaderDesc &shader_desc)
+void PrintShaderDesc(const ls::ShaderDesc &shader_desc)
 {
   std::cout << "Shader desc: " << shader_desc.name << "\n";
   std::cout << "  Uniforms:\n";
@@ -22,7 +22,7 @@ void PrintCachedImgRequest(const ls::CachedImageRequest &req)
 {
   std::cout << "Image request: [" << req.size.x << ", " << req.size.y << "]\n";
 }
-void PrintShaderInvocation(const ls::ScriptShaderInvocation &inv)
+void PrintShaderInvocation(const ls::ShaderInvocation &inv)
 {
   std::cout << "Shader invocation: " << inv.shader_name << "\n";
 }
@@ -61,9 +61,9 @@ void RunTest()
   std::cout << "Loading script size: " << string_stream.str().length() << "\n";
   try
   {
-    auto shader_descs = script.LoadScript(string_stream.str());
+    auto script_contents = script.LoadScript(string_stream.str());
     std::cout << "Script loaded successfully\n";
-    for(const auto &shader_desc : shader_descs)
+    for(const auto &shader_desc : script_contents.shader_descs)
       PrintShaderDesc(shader_desc);
       
     std::cout << "Running script\n";
