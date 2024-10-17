@@ -97,9 +97,7 @@ void RenderGraphMain()
     float b = SliderFloat("Float param", -42.0f, 42.0f);
     //float e = SliderFloat("Float param", -42.0f, 42.0f);
     Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
-
-    // BUG: formatFloat() returns a rounded int?
-    Text("BUG: should be 0.52345, but is actually " + formatFloat(0.52345));
+    Text("should be 12345.52345, but is actually " + formatFloat(12345.52345, '0', 1, 7));
   }
 }}
       </textarea>
