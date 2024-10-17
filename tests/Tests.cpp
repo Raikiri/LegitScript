@@ -87,12 +87,12 @@ void RunTestJson()
   std::cout << "Test starts\n";  
   ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
     {
-      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
+      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
       return val;
     },
     [](std::string name, int val, int min_val, int max_val) -> int
     {
-      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
+      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
       return val;
     },
     [](std::string text) -> void

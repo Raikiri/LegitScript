@@ -115,6 +115,7 @@ private:
   void RegisterImageType();
   template<typename VecType, size_t CompCount>
   void RegisterVecType(std::string type_name, std::string comp_type_name);
+  void RegisterBasicToString();
 
 
   struct ImageInfo
@@ -255,6 +256,7 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     std::string text = *(std::string*)gen->GetArgObject(0);
     this->text_func(text);
   });
+  
   RegisterVecType<ls::vec2, 2>("vec2", "float");
   RegisterVecType<ls::vec3, 3>("vec3", "float");
   RegisterVecType<ls::vec4, 4>("vec4", "float");
@@ -262,6 +264,23 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   RegisterVecType<ls::ivec3, 3>("ivec3", "int");
   RegisterVecType<ls::ivec4, 4>("ivec4", "int");
   RegisterImageType();
+  RegisterBasicToString();
+}
+
+void RenderGraphScript::Impl::RegisterBasicToString()
+{
+  as_script_engine->RegisterGlobalFunction("string to_string(float v)", [](asIScriptGeneric *gen)
+  {
+    float arg = gen->GetArgFloat(0);
+    std::string res = std::to_string(arg);
+    gen->SetReturnObject(&res);
+  });
+  as_script_engine->RegisterGlobalFunction("string to_string(int v)", [](asIScriptGeneric *gen)
+  {
+    int arg = gen->GetArgDWord(0);
+    std::string res = std::to_string(arg);
+    gen->SetReturnObject(&res);
+  });
 }
 
 void RenderGraphScript::Impl::RegisterImageType()
@@ -449,20 +468,20 @@ void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string
     gen->SetReturnObject(&res);
   });
 
-  as_script_engine->RegisterMethod(type_name.c_str(), "void Print()", [=](asIScriptGeneric *gen)
+  as_script_engine->RegisterGlobalFunction(std::string("string to_string(") + type_name + " v)", [](asIScriptGeneric *gen)
   {
-    auto *this_ptr = (VecType*)gen->GetObject();
-    std::cout << "Printing " << type_name << ": [";
+    auto *arg_ptr = (VecType*)gen->GetArgObject(0);
+
+    std::string res = "[";
     bool is_first = true;
     for(size_t i = 0; i < CompCount; i++)
     {
-      if(!is_first)
-        std::cout << ", ";
+      if(!is_first) res += ", ";
       is_first = false;
-      auto comp = GetComp<VecType, CompType>(*this_ptr, i);
-      std::cout << comp;
+      res += std::to_string(GetComp<VecType, CompType>(*arg_ptr, i));
     }
-    std::cout << "]\n";
+    res += "]";
+    gen->SetReturnObject(&res);
   });
 }
 
