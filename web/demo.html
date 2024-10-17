@@ -18,27 +18,62 @@
       font-family: sans-serif;
     }
 
-    textarea#editor {
+    section {
+      display:block;
+    }
+
+    inputs {
+      width: 1000px;
+      height: 50%;
+      display: flex;
+      flex-direction: row;
+    }
+
+    inputs textarea#editor {
       background-color: #222;
       color: #fff;
+      width: 100%;
       height: 500px;
-      width:90%;
+      padding: 1em;
+      flex: 2 0 calc(100% - 2em);
+    }
+
+
+    inputs controls {
+      width:100%;
+      border: 1px solid rgb(41, 118, 182);
+      flex: 1 0 calc(100% - 4em);
+      margin-left: 1em;
       padding: 1em;
     }
 
-    #compilation-result {
+    results {
+      display: flex;
+    }
+
+    results result.compilation pre {
       background-color: #222;
       color: #fff;
       height: 500px;
       width:90%;
       padding: 1em;
+      overflow: auto;
+    }
+
+    results result.frame pre {
+      background-color: #222;
+      color: #fff;
+      height: 500px;
+      width:400px;
+      padding: 1em;
+      overflow: auto;
     }
   </style>
 
 </head>
 <body>
-
   <section>
+  <inputs>
     <textarea id="editor">
 void ColorPass(in float r, in float g, in float b, out vec4 out_color)
 {{
@@ -62,12 +97,31 @@ void RenderGraphMain()
     float b = SliderFloat("Float param", -42.0f, 42.0f);
     //float e = SliderFloat("Float param", -42.0f, 42.0f);
     Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
+
+    // BUG: formatFloat() returns a rounded int?
+    Text("BUG: should be 0.52345, but is actually " + formatFloat(0.52345));
   }
 }}
-    </textarea>
-    <h2>result</h2>
-    <pre id="compilation-result">
-    </pre>
+      </textarea>
+      <controls>
+          <h2>Controls</h2>
+      </controls>
+    <inputs>
+    </section>
+    <section>
+      <results>
+        <result class="compilation">
+          <h2>compilation result</h2>
+          <p class="timings"></p>
+          <pre></pre>
+        </result>
+        <result class="frame">
+          <h2>frame result</h2>
+          <p class="timings"></p>
+          <pre></pre>
+        </result>
+      </results>
+    </section>
     <script type="module" src="./demo.js"></script>
   </section>
 </body>
