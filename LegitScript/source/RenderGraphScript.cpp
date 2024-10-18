@@ -97,11 +97,62 @@ void AddScriptInvocationAsArg(ShaderInvocation &invocation, asIScriptGeneric *ge
 
 
 
-struct ScriptState
+struct ScriptContext
 {
-  std::map<std::string, int> slider_int_params;
-  std::map<std::string, float> slider_float_params;
+  template<typename VecType>
+  VecType &GetContextRef(std::string name);
+
+  std::map<std::string, int> int_params;
+  std::map<std::string, ivec2> ivec2_params;
+  std::map<std::string, ivec3> ivec3_params;
+  std::map<std::string, ivec4> ivec4_params;
+  std::map<std::string, float> float_params;
+  std::map<std::string, vec2> vec2_params;
+  std::map<std::string, vec3> vec3_params;
+  std::map<std::string, vec4> vec4_params;
+  float curr_time;
 };
+template<>
+float &ScriptContext::GetContextRef<float>(std::string name)
+{
+  return this->float_params[name];
+}
+template<>
+vec2 &ScriptContext::GetContextRef<vec2>(std::string name)
+{
+  return this->vec2_params[name];
+}
+template<>
+vec3 &ScriptContext::GetContextRef<vec3>(std::string name)
+{
+  return this->vec3_params[name];
+}
+template<>
+vec4 &ScriptContext::GetContextRef<vec4>(std::string name)
+{
+  return this->vec4_params[name];
+}
+template<>
+int &ScriptContext::GetContextRef<int>(std::string name)
+{
+  return this->int_params[name];
+}
+template<>
+ivec2 &ScriptContext::GetContextRef<ivec2>(std::string name)
+{
+  return this->ivec2_params[name];
+}
+template<>
+ivec3 &ScriptContext::GetContextRef<ivec3>(std::string name)
+{
+  return this->ivec3_params[name];
+}
+template<>
+ivec4 &ScriptContext::GetContextRef<ivec4>(std::string name)
+{
+  return this->ivec4_params[name];
+}
+
 
 struct RenderGraphScript::Impl
 {
@@ -114,8 +165,8 @@ private:
   void RegisterAsScriptGlobals();
   void RegisterImageType();
   template<typename VecType, size_t CompCount>
-  void RegisterVecType(std::string type_name, std::string comp_type_name);
-  void RegisterBasicToString();
+  void RegisterVecType(std::string type_name, std::string uppercase_type_name, std::string comp_type_name);
+  void RegisterBasicTypeOperations();
 
 
   struct ImageInfo
@@ -141,7 +192,7 @@ private:
   std::vector<ImageInfo> image_infos;
   std::unique_ptr<as::ScriptEngine> as_script_engine;
   std::optional<asIScriptFunction*> as_script_func;
-  ScriptState script_state;
+  ScriptContext script_context;
   ScriptEvents script_events;
 };
 
@@ -182,6 +233,8 @@ ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time
 
   image_infos.clear();
   image_infos.push_back({swapchain_size, ls::PixelFormats::rgba8});
+  this->script_context.curr_time = time;
+  
   if(this->as_script_func)
   {
     auto opt_err = as_script_engine->RunScript(this->as_script_func.value());
@@ -227,13 +280,13 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   {
     std::string *name = (std::string*)gen->GetArgObject(0);
     
-    if(this->script_state.slider_int_params.count(*name) == 0)
+    if(this->script_context.int_params.count(*name) == 0)
     {
-      this->script_state.slider_int_params[*name] = gen->GetArgDWord(3);
+      this->script_context.int_params[*name] = gen->GetArgDWord(3);
     }
     int min_val = gen->GetArgDWord(1);
     int max_val = gen->GetArgDWord(2);
-    int &curr_val = this->script_state.slider_int_params[*name];
+    int &curr_val = this->script_context.int_params[*name];
     curr_val = this->slider_int_func(name->c_str(), curr_val, min_val, max_val);
     gen->SetReturnDWord(curr_val);
   });
@@ -241,13 +294,13 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   {
     std::string *name = (std::string*)gen->GetArgObject(0);
     
-    if(this->script_state.slider_float_params.count(*name) == 0)
+    if(this->script_context.float_params.count(*name) == 0)
     {
-      this->script_state.slider_float_params[*name] = gen->GetArgFloat(3);
+      this->script_context.float_params[*name] = gen->GetArgFloat(3);
     }
     float min_val = gen->GetArgFloat(1);
     float max_val = gen->GetArgFloat(2);
-    float &curr_val = (this->script_state.slider_float_params[*name]);
+    float &curr_val = (this->script_context.float_params[*name]);
     curr_val = this->slider_float_func(name->c_str(), curr_val, min_val, max_val);
     gen->SetReturnFloat(curr_val);
   });
@@ -256,18 +309,22 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
     std::string text = *(std::string*)gen->GetArgObject(0);
     this->text_func(text);
   });
-  
-  RegisterVecType<ls::vec2, 2>("vec2", "float");
-  RegisterVecType<ls::vec3, 3>("vec3", "float");
-  RegisterVecType<ls::vec4, 4>("vec4", "float");
-  RegisterVecType<ls::ivec2, 2>("ivec2", "int");
-  RegisterVecType<ls::ivec3, 3>("ivec3", "int");
-  RegisterVecType<ls::ivec4, 4>("ivec4", "int");
+  as_script_engine->RegisterGlobalFunction("float GetTime()", [this](asIScriptGeneric *gen)
+  {
+    gen->SetReturnFloat(this->script_context.curr_time);
+  });
+
+  RegisterVecType<ls::vec2, 2>("vec2", "Vec2", "float");
+  RegisterVecType<ls::vec3, 3>("vec3", "Vec3", "float");
+  RegisterVecType<ls::vec4, 4>("vec4", "Vec4", "float");
+  RegisterVecType<ls::ivec2, 2>("ivec2", "IVec2", "int");
+  RegisterVecType<ls::ivec3, 3>("ivec3", "IVec3", "int");
+  RegisterVecType<ls::ivec4, 4>("ivec4", "IVec4", "int");
   RegisterImageType();
-  RegisterBasicToString();
+  RegisterBasicTypeOperations();
 }
 
-void RenderGraphScript::Impl::RegisterBasicToString()
+void RenderGraphScript::Impl::RegisterBasicTypeOperations()
 {
   as_script_engine->RegisterGlobalFunction("string to_string(float v)", [](asIScriptGeneric *gen)
   {
@@ -281,6 +338,18 @@ void RenderGraphScript::Impl::RegisterBasicToString()
     std::string res = std::to_string(arg);
     gen->SetReturnObject(&res);
   });
+  as_script_engine->RegisterGlobalFunction("int &ContextInt(string name)", [this](asIScriptGeneric *gen)
+  {
+    auto *name = (std::string*)gen->GetArgObject(0);
+    //this does not invalidate existing points
+    gen->SetReturnAddress(&this->script_context.int_params[*name]);
+  });
+  as_script_engine->RegisterGlobalFunction("float &ContextFloat(string name)", [this](asIScriptGeneric *gen)
+  {
+    auto *name = (std::string*)gen->GetArgObject(0);
+    //this does not invalidate existing points
+    gen->SetReturnAddress(&this->script_context.float_params[*name]);
+  });  
 }
 
 void RenderGraphScript::Impl::RegisterImageType()
@@ -391,7 +460,7 @@ void SetComp(VecType &v, size_t idx, CompType c)
 }
 
 template<typename VecType, size_t CompCount>
-void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string comp_type_name)
+void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string uppercase_type_name, std::string comp_type_name)
 {
   using CompType = decltype(VecType::x);
   assert(sizeof(VecType) == sizeof(CompType) * CompCount);
@@ -482,6 +551,11 @@ void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string
     }
     res += "]";
     gen->SetReturnObject(&res);
+  });
+  as_script_engine->RegisterGlobalFunction(type_name + "& Context" + uppercase_type_name + "(string name)", [this](asIScriptGeneric *gen)
+  {
+    auto *name_ptr = (std::string*)gen->GetArgObject(0);
+    gen->SetReturnObject(&this->script_context.GetContextRef<VecType>(*name_ptr));
   });
 }
 
