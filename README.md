@@ -26,7 +26,7 @@ void RenderGraphMain()
       GetSwapchainImage());
     int a = SliderInt("Int param", -42, 42, 5);
     float b = SliderFloat("Float param", -42.0f, 42.0f);
-    Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
+    Text("script int: " + a + " float: " + b);
   }
 }}
 ```
@@ -44,19 +44,7 @@ multiple GPU backends (for example, Vulkan or webgl) can easily parse that list 
 ```cpp
 void RunTest()
 {
-  ls::LegitScript script(
-    [](std::string name, float val, float min_val, float max_val) -> float {
-      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string name, int val, int min_val, int max_val) -> int {
-      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string text) -> void {
-      std::cout << "Text: " << text << "\n";
-    }
-  );
+  ls::LegitScript script;
 
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
@@ -67,9 +55,9 @@ void RunTest()
     for(const auto &shader_desc : shader_descs)
       PrintShaderDesc(shader_desc);
 
-    auto script_calls = script.RunScript({1024, 1024}, 0.0f);
-    for(const auto &req : script_calls.cached_image_requests)
-      PrintCachedImgRequest(req);
+    auto script_events = script.RunScript({});
+    for(const auto &req : script_calls.context_requests)
+      PrintRequest(req);
     for(const auto &inv : script_calls.script_shader_invocations)
       PrintShaderInvocation(inv);
   }
@@ -83,28 +71,14 @@ void RunTest()
 # How does it actually work?
 The script is split into blocks defined inside double curly brackets: `{{}}`. Blocks corresponding to shader passes are appended to glsl shader headers and can be directly compiled as glsl. For each such a block, LegitScript returns
 one generated glsl shader ready to be compiled. Block named `void RenderGraphMain()` is the render graph function and it's internally compiled by LegitScript as AngelScript. AngelScript is chosen as the closes to glsl language that can be interpreted easily from C++.
-`RunScript()` is meant to be called every frame and it outputs all events that happen during that frame: loading images, running shaders, etc. This information is meant to be easily translateable into actual draw calls on any GAPI backend
-that supports glsl.
+`RunScript()` is meant to be called every frame and it outputs all events that happen during that frame: loading images, running shaders, requesting debug UI controls, etc. This information is meant to be easily translateable into actual draw calls on any GAPI backend that supports glsl.
 
 # String-only JSON interface
 For the purposes of embedding LegitScript into web, we support an emscripten build and a dedicated string-only interface for easy integration with JavaScript code:
 ```cpp
 void RunTestJson()
 {
-  ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
-    {
-      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string name, int val, int min_val, int max_val) -> int
-    {
-      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string text) -> void
-    {
-      std::cout << "Text: " << text << "\n";
-    });
+  ls::InitScript;
 
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
@@ -112,7 +86,7 @@ void RunTestJson()
   try
   {
     std::string shader_descs = ls::LoadScript(string_stream.str());
-    std::string script_calls = ls::RunScript(1024, 1024, 0.0f);
+    std::string script_calls = ls::RunScript("[]");
   }
   catch(const std::exception &e)
   {
@@ -155,8 +129,6 @@ Shader descs output:
 Script calls output:
 ```json
 {
-  "cached_img_requests": [],
-  "loaded_img_requests": [],
   "shader_invocations": [
     {
       "color_attachments": [
@@ -202,7 +174,6 @@ that serves as a minimal example and a minimal test, but when used as a middlewa
 
 ```
 nix-shell
-# note: the build-emscripten directory is hardecoded in web/demo.js
 emcmake cmake -B build-emscripten -S .
 cmake --build build-emscripten
 cmake --install build-emscripten
