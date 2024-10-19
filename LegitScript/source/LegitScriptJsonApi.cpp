@@ -8,10 +8,6 @@ namespace ls
   std::unique_ptr<ls::LegitScript> instance;
   ls::ScriptContents script_contents;
   
-  void InitScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func)
-  {
-    instance.reset(new ls::LegitScript(slider_float_func, slider_int_func, text_func));
-  }
   
   json SerializeSamplers(const std::vector<ls::ShaderDesc::Sampler> samplers)
   {
@@ -94,8 +90,12 @@ namespace ls
     return arr;
   }
 
-  std::string LoadScript(std::string script_source)
+  std::string LoadScript(const std::string &script_source)
   {
+    if(!instance)
+    {
+      instance.reset(new ls::LegitScript());
+    }
     assert(instance);
     json res_obj;
     try
@@ -126,20 +126,6 @@ namespace ls
       case ls::PixelFormats::rgba32f: return "rgba32f"; break;
     }
     assert(0);
-  }
-  json SerializeCachedImgRequests(const std::vector<ls::CachedImageRequest> &cached_img_requests)
-  {
-    auto arr = json::array();
-    for(const auto &req : cached_img_requests)
-    {
-      arr.push_back(json::object({
-        {"size_x", req.size.x},
-        {"size_y", req.size.y},
-        {"pixel_format", PixelFormatToStr(req.pixel_format)},
-        {"id", req.id}
-      }));
-    }
-    return arr;
   }
   json SerializeVec2(vec2 val)
   {
@@ -239,23 +225,99 @@ namespace ls
     }
     return arr;
   }
+  
+  json SerializeRequest(ls::FloatRequest req)
+  {
+    return json::object({{"name", req.name}, {"type", "FloatRequest"}, {"min_val", req.min_val}, {"max_val", req.max_val}, {"def_val", req.def_val}});
+  }
+  json SerializeRequest(ls::IntRequest req)
+  {
+    return json::object({{"name", req.name}, {"type", "IntRequest"}, {"min_val", req.min_val}, {"max_val", req.max_val}, {"def_val", req.def_val}});
+  }
+  json SerializeRequest(ls::BoolRequest req)
+  {
+    return json::object({{"name", req.name}, {"type", "BoolRequest"}, {"def_val", req.def_val}});
+  }
+  json SerializeRequest(ls::TextRequest req)
+  {
+    return json::object({{"text", req.text}, {"type", "TextRequest"}});
+  }
+  json SerializeRequest(ls::LoadedImageRequest req)
+  {
+    return json::object({{"filename", req.filename}, {"type", "LoadedImageRequest"}});
+  }
+  json SerializeRequest(ls::CachedImageRequest req)
+  {
+    return json::object({
+      {"type", "CachedImageRequest"},
+      {"size", SerializeIVec2(req.size)},
+      {"pixel_format", PixelFormatToStr(req.pixel_format)},
+      {"id", req.id}
+    });
+  }
+  json SerializeRequest(ls::ColorRequest req)
+  {
+    return json::object({
+      {"type", "ColorRequest"},
+      {"def_val", SerializeVec4(req.def_val)}
+    });
+  }
+  json SerializeContextRequests(const std::vector<ls::ContextRequest> &context_requests)
+  {
+    auto arr = json::array();
+    for(const auto &request : context_requests)
+    {
+      std::visit([&arr](const auto &r){
+        arr.push_back(SerializeRequest(r));
+      }, request);
+    }
+    return arr;
+  }
   json SerializeScriptEvents(const ls::ScriptEvents &script_events, const ls::ShaderDescs &shader_descs)
   {
     return json::object({
-      {"cached_img_requests", SerializeCachedImgRequests(script_events.cached_image_requests)},
-      {"loaded_img_requests", json::array()},
+      {"context_requests", SerializeContextRequests(script_events.context_requests)},
       {"shader_invocations", SerializeShaderInvocations(script_events.script_shader_invocations, shader_descs)}
     });
   }
 
+  ls::ContextInput ParseContextInput(json json_input)
+  {
+    ls::ContextInput context_input;
+    context_input.name = json_input["name"];
+    
+    json value = json_input["value"];
+    if(json_input["type"] == "float") context_input.value = float(value);
+    if(json_input["type"] == "vec2") context_input.value = ls::vec2{float(value["x"]), float(value["y"])};
+    if(json_input["type"] == "vec3") context_input.value = ls::vec3{float(value["x"]), float(value["y"]), float(value["z"])};
+    if(json_input["type"] == "vec4") context_input.value = ls::vec4{float(value["x"]), float(value["y"]), float(value["z"]), float(value["w"])};
+    if(json_input["type"] == "int") context_input.value = int(value);
+    if(json_input["type"] == "ivec2") context_input.value = ls::ivec2{int(value["x"]), int(value["y"])};
+    if(json_input["type"] == "ivec3") context_input.value = ls::ivec3{int(value["x"]), int(value["y"]), int(value["z"])};
+    if(json_input["type"] == "ivec4") context_input.value = ls::ivec4{int(value["x"]), int(value["y"]), int(value["z"]), int(value["w"])};
+    //if(json_input["type"] == "LoadedImage") context_input.value = ls::LoadedImage{int(value["x"]), int(value["y"]), int(value["z"]), int(value["w"])};
+    return context_input;
+  }
+
+  std::vector<ls::ContextInput> ParseContextInputs(const std::string &context_inputs_str)
+  {
+    std::vector<ls::ContextInput> context_inputs;
+    json json_inputs = json::parse(context_inputs_str);
+    for(const auto &json_input : json_inputs)
+    {
+      context_inputs.push_back(ParseContextInput(json_input));
+    }
+    return context_inputs;
+  }
   
-  std::string RunScript(int swapchain_width, int swapchain_height, float time)
+  std::string RunScript(const std::string &context_inputs_json)
   {
     assert(instance);
     json res_obj;
     try
     {
-      auto script_events = instance->RunScript({swapchain_width, swapchain_height}, time);
+      auto context_inputs = ParseContextInputs(context_inputs_json);
+      auto script_events = instance->RunScript(context_inputs);
       res_obj = SerializeScriptEvents(script_events, script_contents.shader_descs);
     }
     catch(const ls::ScriptException &e)

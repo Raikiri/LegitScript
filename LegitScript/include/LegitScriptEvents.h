@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <variant>
 #include <cstdint>
 #include "PodTypes.h"
 
@@ -134,10 +135,35 @@ namespace ls
   };
   
 
+  struct FloatRequest
+  {
+    std::string name;
+    float min_val, max_val, def_val;
+  };
+  struct IntRequest
+  {
+    std::string name;
+    int min_val, max_val, def_val;
+  };
+  struct ColorRequest
+  {
+    std::string name;
+    vec4 def_val;
+  };
+  struct BoolRequest
+  {
+    std::string name;
+    bool def_val;
+  };
+  struct TextRequest
+  {
+    std::string text;
+  };
+  using ContextRequest = std::variant<FloatRequest, IntRequest, ColorRequest, BoolRequest, TextRequest, LoadedImageRequest, CachedImageRequest>;
+  
   struct ScriptEvents
   {
-    std::vector<CachedImageRequest> cached_image_requests;
-    std::vector<LoadedImageRequest> loaded_image_requests;
+    std::vector<ContextRequest> context_requests;
     std::vector<ShaderInvocation> script_shader_invocations;
   };
 }

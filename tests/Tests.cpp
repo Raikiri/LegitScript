@@ -26,10 +26,37 @@ void PrintShaderInvocation(const ls::ShaderInvocation &inv)
 {
   std::cout << "Shader invocation: " << inv.shader_name << "\n";
 }
+
+void PrintRequest(const ls::FloatRequest req)
+{
+}
+void PrintRequest(const ls::IntRequest req)
+{
+}
+void PrintRequest(const ls::ColorRequest req)
+{
+}
+void PrintRequest(const ls::BoolRequest req)
+{
+}
+void PrintRequest(const ls::TextRequest req)
+{
+}
+void PrintRequest(const ls::LoadedImageRequest req)
+{
+}
+void PrintRequest(const ls::CachedImageRequest req)
+{
+}
+
 void PrintScriptEvents(const ls::ScriptEvents script_events)
 {
-  for(const auto &req : script_events.cached_image_requests)
-    PrintCachedImgRequest(req);
+  for(const auto &req : script_events.context_requests)
+  {
+    std::visit([](auto r){
+      PrintRequest(r);
+    }, req);
+  }
   
   for(const auto &inv : script_events.script_shader_invocations)
     PrintShaderInvocation(inv);
@@ -38,22 +65,7 @@ void PrintScriptEvents(const ls::ScriptEvents script_events)
 void RunTest()
 {
   std::cout << "Test starts\n";  
-  ls::LegitScript script(
-    [](std::string name, float val, float min_val, float max_val) -> float
-    {
-      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string name, int val, int min_val, int max_val) -> int
-    {
-      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string text) -> void
-    {
-      std::cout << "Text: " << text << "\n";
-    }
-  );
+  ls::LegitScript script;
   
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
@@ -67,12 +79,9 @@ void RunTest()
       PrintShaderDesc(shader_desc);
       
     std::cout << "Running script\n";
-    auto script_calls = script.RunScript({1024, 1024}, 0.0f);
+    auto script_events = script.RunScript({});
     std::cout << "Script ran successfully\n";
-    for(const auto &req : script_calls.cached_image_requests)
-      PrintCachedImgRequest(req);
-    for(const auto &inv : script_calls.script_shader_invocations)
-      PrintShaderInvocation(inv);
+    PrintScriptEvents(script_events);
   }
   catch(const std::exception &e)
   {
@@ -85,21 +94,6 @@ void RunTestJson()
 {
   
   std::cout << "Test starts\n";  
-  ls::InitScript([](std::string name, float val, float min_val, float max_val) -> float
-    {
-      std::cout << "Slider float: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string name, int val, int min_val, int max_val) -> int
-    {
-      std::cout << "Slider int: " << val << "[" << min_val << ", " << max_val << "]\n";
-      return val;
-    },
-    [](std::string text) -> void
-    {
-      std::cout << "Text: " << text << "\n";
-    });
-
   std::ifstream file_stream("../data/Scripts/main.ls");
   std::stringstream string_stream;
   string_stream << file_stream.rdbuf();
@@ -111,7 +105,7 @@ void RunTestJson()
     std::cout << "Shader descs: " << shader_descs << "\n";
       
     std::cout << "Running script\n";
-    std::string script_calls = ls::RunScript(1024, 1024, 0.0f);
+    std::string script_calls = ls::RunScript("[{\"name\": \"@swapchain_size\", \"type\": \"ivec2\", \"value\":{\"x\":512, \"y\":512}}]");
     std::cout << "Script ran successfully: \n";
     std::cout << "Script calls: " << script_calls << "\n";
   }

@@ -8,29 +8,29 @@
 
 namespace ls
 {
+std::string ArgTypeToAsTypeSpecific(ls::DecoratedPodType dec_pod_type)
+{
+  auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
+  if(access_qualifier == ls::DecoratedPodType::AccessQualifiers::out)
+  {
+    return "Image";
+  }
+  return PodTypeToString(dec_pod_type.type);
+}
+std::string ArgTypeToAsTypeSpecific(ls::DecoratedImageType dec_img_type)
+{
+  return "Image";
+}
+std::string ArgTypeToAsTypeSpecific(ls::SamplerTypes sampler_type)
+{
+    return "Image";
+}
+
 std::string ArgTypeToAsType(ls::ArgDesc::ArgType arg_type)
 {
-  if(std::holds_alternative<ls::DecoratedPodType>(arg_type))
-  {
-    auto dec_pod_type = std::get<ls::DecoratedPodType>(arg_type);
-    auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
-    if(access_qualifier == ls::DecoratedPodType::AccessQualifiers::out)
-    {
-      return "Image";
-    }
-    return PodTypeToString(dec_pod_type.type);
-  }
-  if(std::holds_alternative<ls::DecoratedImageType>(arg_type))
-  {
-    auto dec_img_type = std::get<ls::DecoratedImageType>(arg_type);
-    return "Image";
-  }
-  if(std::holds_alternative<ls::SamplerTypes>(arg_type))
-  {
-    auto sampler_type = std::get<ls::SamplerTypes>(arg_type);
-    return "Image";
-  }
-  throw std::runtime_error("Can't convert arg type to as type");
+  return std::visit([](auto arg){
+    return ArgTypeToAsTypeSpecific(arg);
+  }, arg_type);
 }
 
 
@@ -54,44 +54,51 @@ std::string CreateAsPassFuncDeclaration(const ls::PassDecl &decl)
 }
 const Image::Id swapchain_img_id = 0;
 
+void AddScriptInvocationAsArgSpecific(ShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::DecoratedPodType dec_pod_type)
+{
+  auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
+  if(dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in) == ls::DecoratedPodType::AccessQualifiers::out)
+  {
+    auto script_img = *(ls::Image*)gen->GetArgObject(param_idx);
+    if(script_img.mip_range.y - script_img.mip_range.x != 1)
+    {
+      throw ls::RenderGraphRuntimeException(0, "", "Can't bind render target with more than 1 mip");
+    }
+    invocation.color_attachments.push_back(script_img);
+  }else
+  {
+    using PodTypes = ls::DecoratedPodType::PodTypes;
+    switch(dec_pod_type.type)
+    {
+      case PodTypes::float_: invocation.AddUniformValue(          gen->GetArgFloat(param_idx)); break;
+      case PodTypes::vec2:   invocation.AddUniformValue( *(vec2*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::vec3:   invocation.AddUniformValue( *(vec3*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::vec4:   invocation.AddUniformValue( *(vec4*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::int_:   invocation.AddUniformValue(     int(gen->GetArgDWord(param_idx))); break;
+      case PodTypes::ivec2:  invocation.AddUniformValue(*(ivec2*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::ivec3:  invocation.AddUniformValue(*(ivec3*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::ivec4:  invocation.AddUniformValue(*(ivec4*)gen->GetArgObject(param_idx)); break;
+      default: throw std::runtime_error("Can't convert arg type to pod type"); break;
+    } 
+  }
+}
+
+void AddScriptInvocationAsArgSpecific(ShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::SamplerTypes sampler_type)
+{
+  auto img = *(ls::Image*)gen->GetArgObject(param_idx);
+  invocation.image_sampler_bindings.push_back(img);
+}
+
+void AddScriptInvocationAsArgSpecific(ShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::DecoratedImageType dec_img_type)
+{
+  throw std::runtime_error("Images are not supported yet");
+}
+
 void AddScriptInvocationAsArg(ShaderInvocation &invocation, asIScriptGeneric *gen, size_t param_idx, ls::ArgDesc arg_desc)
 {
-  auto arg_type = arg_desc.type;
-  if(std::holds_alternative<ls::DecoratedPodType>(arg_type))
-  {
-    auto dec_pod_type = std::get<ls::DecoratedPodType>(arg_type);
-    auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
-    if(dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in) == ls::DecoratedPodType::AccessQualifiers::out)
-    {
-      auto script_img = *(ls::Image*)gen->GetArgObject(param_idx);
-      if(script_img.mip_range.y - script_img.mip_range.x != 1)
-        throw std::runtime_error("Can't bind render target with more than 1 mip");
-      invocation.color_attachments.push_back(script_img);
-    }else
-    {
-      using PodTypes = ls::DecoratedPodType::PodTypes;
-      switch(dec_pod_type.type)
-      {
-        case PodTypes::float_: invocation.AddUniformValue(          gen->GetArgFloat(param_idx)); break;
-        case PodTypes::vec2:   invocation.AddUniformValue( *(vec2*)gen->GetArgObject(param_idx)); break;
-        case PodTypes::vec3:   invocation.AddUniformValue( *(vec3*)gen->GetArgObject(param_idx)); break;
-        case PodTypes::vec4:   invocation.AddUniformValue( *(vec4*)gen->GetArgObject(param_idx)); break;
-        case PodTypes::int_:   invocation.AddUniformValue(     int(gen->GetArgDWord(param_idx))); break;
-        case PodTypes::ivec2:  invocation.AddUniformValue(*(ivec2*)gen->GetArgObject(param_idx)); break;
-        case PodTypes::ivec3:  invocation.AddUniformValue(*(ivec3*)gen->GetArgObject(param_idx)); break;
-        case PodTypes::ivec4:  invocation.AddUniformValue(*(ivec4*)gen->GetArgObject(param_idx)); break;
-        default: throw std::runtime_error("Can't convert arg type to pod type"); break;
-      } 
-    }
-  }else
-  if(std::holds_alternative<ls::SamplerTypes>(arg_type))
-  {
-    auto img = *(ls::Image*)gen->GetArgObject(param_idx);
-    invocation.image_sampler_bindings.push_back(img);
-  }else
-  {
-    throw std::runtime_error("Can't convert arg type to as type");
-  }
+  std::visit([&invocation, gen, param_idx](auto a){
+    AddScriptInvocationAsArgSpecific(invocation, gen, param_idx, a);
+  }, arg_desc.type);
 }
 
 
@@ -152,14 +159,20 @@ ivec4 &ScriptContext::GetContextRef<ivec4>(std::string name)
 {
   return this->ivec4_params[name];
 }
-
+template<>
+LoadedImage &ScriptContext::GetContextRef<ls::LoadedImage>(std::string name)
+{
+  static LoadedImage img;
+  return img;
+}
 
 struct RenderGraphScript::Impl
 {
-  Impl(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func);
+  Impl();
   void LoadScript(std::string script_src, const std::vector<ls::PassDecl> &pass_decls);
-  ScriptEvents RunScript(ivec2 swapchain_size, float time);
+  ScriptEvents RunScript(const std::vector<ContextInput> &context_inputs);
 private:
+  void SetContextInputs(const std::vector<ContextInput> &context_inputs);
   void RecreateAsScriptEngine(const std::vector<ls::PassDecl> &pass_decls);
   void RegisterAsScriptPassFunctions(const std::vector<ls::PassDecl> &pass_decls);
   void RegisterAsScriptGlobals();
@@ -185,10 +198,6 @@ private:
       return ivec2{size.x >> mip_level, size.y >> mip_level};
     }
   };
-  SliderFloatFunc slider_float_func;
-  SliderIntFunc slider_int_func;
-  TextFunc text_func;
-
   std::vector<ImageInfo> image_infos;
   std::unique_ptr<as::ScriptEngine> as_script_engine;
   std::optional<asIScriptFunction*> as_script_func;
@@ -200,22 +209,19 @@ void RenderGraphScript::LoadScript(std::string script_src, const std::vector<ls:
 {
   impl->LoadScript(script_src, pass_decls);
 }
-ScriptEvents RenderGraphScript::RunScript(ivec2 swapchain_size, float time)
+ScriptEvents RenderGraphScript::RunScript(const std::vector<ContextInput> &context_inputs)
 {
-  return impl->RunScript(swapchain_size, time);
+  return impl->RunScript(context_inputs);
 }
-RenderGraphScript::RenderGraphScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func)
+RenderGraphScript::RenderGraphScript()
 {
-  this->impl.reset(new RenderGraphScript::Impl(slider_float_func, slider_int_func, text_func));
+  this->impl.reset(new RenderGraphScript::Impl());
 }
 RenderGraphScript::~RenderGraphScript()
 {
 }
 
-RenderGraphScript::Impl::Impl(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func) :
-  slider_float_func(slider_float_func),
-  slider_int_func(slider_int_func),
-  text_func(text_func)
+RenderGraphScript::Impl::Impl()
 {
 }
 
@@ -227,13 +233,26 @@ void RenderGraphScript::Impl::LoadScript(std::string script_src, const std::vect
   this->as_script_func = mod->GetFunctionByName("main");
 }
 
-ScriptEvents RenderGraphScript::Impl::RunScript(ivec2 swapchain_size, float time)
+void RenderGraphScript::Impl::SetContextInputs(const std::vector<ContextInput> &context_inputs)
+{
+  for(const auto &input : context_inputs)
+  {
+    std::visit([this, &input](auto val){
+      this->script_context.GetContextRef<decltype(val)>(input.name) = val;
+    }, input.value);
+  }
+}
+
+ScriptEvents RenderGraphScript::Impl::RunScript(const std::vector<ContextInput> &context_inputs)
 {
   script_events = ScriptEvents();
-
+  SetContextInputs(context_inputs);
+  
+  ivec2 swapchain_size = this->script_context.GetContextRef<ivec2>("@swapchain_size");
   image_infos.clear();
   image_infos.push_back({swapchain_size, ls::PixelFormats::rgba8});
-  this->script_context.curr_time = time;
+  
+  this->script_context.curr_time = this->script_context.GetContextRef<float>("@time");
   
   if(this->as_script_func)
   {
@@ -279,35 +298,61 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   as_script_engine->RegisterGlobalFunction("int SliderInt(string name, int min_val, int max_val, int def_val = 0)", [this](asIScriptGeneric *gen)
   {
     std::string *name = (std::string*)gen->GetArgObject(0);
+    int min_val = gen->GetArgDWord(1);
+    int max_val = gen->GetArgDWord(2);
+    int def_val = gen->GetArgDWord(3);
     
     if(this->script_context.int_params.count(*name) == 0)
     {
-      this->script_context.int_params[*name] = gen->GetArgDWord(3);
+      this->script_context.int_params[*name] = def_val;
     }
-    int min_val = gen->GetArgDWord(1);
-    int max_val = gen->GetArgDWord(2);
-    int &curr_val = this->script_context.int_params[*name];
-    curr_val = this->slider_int_func(name->c_str(), curr_val, min_val, max_val);
+    this->script_events.context_requests.push_back(
+      IntRequest{*name, min_val, max_val, def_val}
+    );
+    auto curr_val = this->script_context.GetContextRef<int>(*name);
     gen->SetReturnDWord(curr_val);
   });
   as_script_engine->RegisterGlobalFunction("float SliderFloat(string name, float min_val, float max_val, float def_val = 0.0f)", [this](asIScriptGeneric *gen)
   {
     std::string *name = (std::string*)gen->GetArgObject(0);
+    float min_val = gen->GetArgFloat(1);
+    float max_val = gen->GetArgFloat(2);
+    float def_val = gen->GetArgFloat(3);
     
     if(this->script_context.float_params.count(*name) == 0)
     {
-      this->script_context.float_params[*name] = gen->GetArgFloat(3);
+      this->script_context.float_params[*name] = def_val;
     }
-    float min_val = gen->GetArgFloat(1);
-    float max_val = gen->GetArgFloat(2);
-    float &curr_val = (this->script_context.float_params[*name]);
-    curr_val = this->slider_float_func(name->c_str(), curr_val, min_val, max_val);
+    this->script_events.context_requests.push_back(
+      FloatRequest{*name, min_val, max_val, def_val}
+    );
+
+    auto curr_val = this->script_context.GetContextRef<float>(*name);
     gen->SetReturnFloat(curr_val);
   });
+  as_script_engine->RegisterGlobalFunction("bool Checkbox(string name, bool def_val = true)", [this](asIScriptGeneric *gen)
+  {
+    std::string *name = (std::string*)gen->GetArgObject(0);
+    auto def_val = gen->GetArgByte(1);
+    
+    if(this->script_context.int_params.count(*name) == 0)
+    {
+      this->script_context.int_params[*name] = def_val;
+    }
+    this->script_events.context_requests.push_back(
+      BoolRequest{*name, def_val != 0}
+    );
+
+    auto curr_val = this->script_context.GetContextRef<int>(*name);
+    gen->SetReturnByte(curr_val != 0);
+  });
+
   as_script_engine->RegisterGlobalFunction("void Text(string str)", [this](asIScriptGeneric *gen)
   {
     std::string text = *(std::string*)gen->GetArgObject(0);
-    this->text_func(text);
+    this->script_events.context_requests.push_back(
+      TextRequest{text}
+    );
   });
   as_script_engine->RegisterGlobalFunction("float GetTime()", [this](asIScriptGeneric *gen)
   {
@@ -362,14 +407,14 @@ void RenderGraphScript::Impl::RegisterImageType()
     int height = gen->GetArgDWord(1);
     auto pixel_format = ls::PixelFormats(gen->GetArgDWord(2));
     
-    ls::CachedImageRequest image_request;
     Image::Id id = this->image_infos.size();
     this->image_infos.push_back({ivec2{width, height}, pixel_format});
 
+    ls::CachedImageRequest image_request;
     image_request.id = id;
     image_request.pixel_format = pixel_format;
-    image_request.size = {width, height};    
-    this->script_events.cached_image_requests.push_back(image_request);
+    image_request.size = {width, height};
+    this->script_events.context_requests.push_back(image_request);
 
     ls::Image img;
     img.id = id;
@@ -388,7 +433,7 @@ void RenderGraphScript::Impl::RegisterImageType()
     image_request.id = id;
     image_request.pixel_format = pixel_format;
     image_request.size = size;    
-    this->script_events.cached_image_requests.push_back(image_request);
+    this->script_events.context_requests.push_back(image_request);
 
     ls::Image img;
     img.id = id;
@@ -412,7 +457,11 @@ void RenderGraphScript::Impl::RegisterImageType()
     int dst_mip = src_img.mip_range.x + mip_level;
     if(dst_mip >= src_img.mip_range.y)
     {
-      throw std::runtime_error(std::string("Requested mip ") + std::to_string(mip_level) + " but there are only " + std::to_string(src_img.mip_range.y - src_img.mip_range.x));
+      throw ls::RenderGraphRuntimeException(
+        0,
+        "GetMip",
+        std::string("Requested mip ") + std::to_string(mip_level) + " but there are only " + std::to_string(src_img.mip_range.y - src_img.mip_range.x)
+      );
     }
     
     int mip = std::clamp<int>(dst_mip, 0, this->image_infos[src_img.id].GetMipsCount() - 1);

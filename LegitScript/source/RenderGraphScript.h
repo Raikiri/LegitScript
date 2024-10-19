@@ -1,7 +1,7 @@
 #pragma once
 #include "ScriptParser.h"
 #include "../include/LegitScriptEvents.h"
-#include "../include/LegitScriptCallbacks.h"
+#include "../include/LegitScriptInputs.h"
 #include <functional>
 
 namespace ls
@@ -42,10 +42,10 @@ namespace ls
   
   struct RenderGraphScript
   {
-    RenderGraphScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func);
+    RenderGraphScript();
     ~RenderGraphScript();
     void LoadScript(std::string script_src, const std::vector<ls::PassDecl> &pass_decls);
-    ScriptEvents RunScript(ivec2 swapchain_size, float time);
+    ScriptEvents RunScript(const std::vector<ContextInput> &context_inputs);
     
   private:
     struct Impl;

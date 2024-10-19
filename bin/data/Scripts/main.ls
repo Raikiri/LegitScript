@@ -39,7 +39,7 @@ void RenderGraphMain()
       SliderFloat("R", 0.0f, 1.0f, 0.3f),
       SliderFloat("G", 0.0f, 1.0f, 0.4f),
       SliderFloat("B", 0.0f, 1.0f, 0.5f));
-    Text("vec3: " + to_string(color) + " pi: " + to_string(3.1415f));
+    Text("Swapchain size: " + GetSwapchainImage().GetSize());
     Text("vec3: " + color + " pi: " + 3.1415f);
     ColorPass(
       color,

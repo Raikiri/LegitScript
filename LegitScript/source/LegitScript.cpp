@@ -7,6 +7,27 @@
 #include "../include/SourceAssembler.h"
 namespace ls
 {
+  void AddShaderDescArg(ls::ShaderDesc &desc, const ls::DecoratedPodType &dec_pod_type, std::string name)
+  {
+    std::string type_name = PodTypeToString(dec_pod_type.type);
+    
+    auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
+    if(access_qualifier == ls::DecoratedPodType::AccessQualifiers::out)
+    {
+      desc.outs.push_back({type_name, name});
+    }else
+    {
+      desc.uniforms.push_back({type_name, name});
+    }
+  }
+  void AddShaderDescArg(ls::ShaderDesc &desc, const ls::SamplerTypes &sampler_type, std::string name)
+  {
+    desc.samplers.push_back({SamplerTypeToString(sampler_type), name});
+  }
+  void AddShaderDescArg(ls::ShaderDesc &desc, const ls::DecoratedImageType &dec_image_type, std::string name)
+  {
+  }
+  
   ls::ShaderDesc CreateShaderDesc(const ls::PassDecl &decl, std::vector<std::string> flattened_includes, const ls::Preamble &preamble, ls::BlockBody body)
   {
     ls::ShaderDesc desc;
@@ -24,28 +45,9 @@ namespace ls
     
     for(const auto &arg : decl.arg_descs)
     {
-      if(std::holds_alternative<ls::DecoratedPodType>(arg.type))
-      {
-        auto dec_pod_type = std::get<ls::DecoratedPodType>(arg.type);
-        std::string type_name = PodTypeToString(dec_pod_type.type);
-        
-        auto access_qualifier = dec_pod_type.access_qalifier.value_or(ls::DecoratedPodType::AccessQualifiers::in);
-        if(access_qualifier == ls::DecoratedPodType::AccessQualifiers::out)
-        {
-          desc.outs.push_back({type_name, arg.name});
-        }else
-        {
-          desc.uniforms.push_back({type_name, arg.name});
-        }
-      }else
-      if(std::holds_alternative<ls::SamplerTypes>(arg.type))
-      {
-        auto sampler_type = std::get<ls::SamplerTypes>(arg.type);
-        desc.samplers.push_back({SamplerTypeToString(sampler_type), arg.name});
-      }else
-      {
-        assert(0);
-      }
+      std::visit([&desc, arg](const auto &a){
+        AddShaderDescArg(desc, a, arg.name);
+      }, arg.type);
     }
     return desc;
   }
@@ -120,8 +122,8 @@ namespace ls
 
   struct LegitScript::Impl
   {
-    Impl(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func)
-      : render_graph_script(slider_float_func, slider_int_func, text_func)
+    Impl()
+      : render_graph_script()
     {
     }
     ~Impl(){}
@@ -214,11 +216,11 @@ namespace ls
 
       return script_contents;
     }
-    ls::ScriptEvents RunScript(ivec2 swapchain_size, float time)
+    ls::ScriptEvents RunScript(const std::vector<ContextInput> &context_inputs)
     {
       try
       {
-        return render_graph_script.RunScript(swapchain_size, time);
+        return render_graph_script.RunScript(context_inputs);
       }
       catch(const ls::RenderGraphRuntimeException &e)
       {
@@ -237,19 +239,19 @@ namespace ls
     ls::ScriptParser script_parser;
   };
   
-  ls::ScriptEvents LegitScript::RunScript(ivec2 swapchain_size, float time)
+  ls::ScriptEvents LegitScript::RunScript(const std::vector<ContextInput> &context_inputs)
   {
-    return impl->RunScript(swapchain_size, time);
+    return impl->RunScript(context_inputs);
   }
 
-  ls::ScriptContents LegitScript::LoadScript(std::string script_source)
+  ls::ScriptContents LegitScript::LoadScript(const std::string &script_source)
   {
     return impl->LoadScript(script_source);
   }
   
-  LegitScript::LegitScript(SliderFloatFunc slider_float_func, SliderIntFunc slider_int_func, TextFunc text_func)
+  LegitScript::LegitScript()
   {
-    this->impl.reset(new LegitScript::Impl(slider_float_func, slider_int_func, text_func));
+    this->impl.reset(new LegitScript::Impl());
   }
   LegitScript::~LegitScript()
   {
