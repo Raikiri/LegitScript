@@ -8,19 +8,6 @@
 #include "LegitScriptJsonApi.h"
 
 std::string LegitScriptLoad(std::string source, emscripten::val imControls) {
-  ls::InitScript([imControls](std::string name, float val, float min_val, float max_val) -> float
-    {
-      return imControls.call<float>("floatSlider", name, val, min_val, max_val);
-    },
-    [imControls](std::string name, int val, int min_val, int max_val) -> int
-    {
-      return imControls.call<int>("intSlider", name, val, min_val, max_val);
-    },
-    [imControls](std::string text) -> void
-    {
-      imControls.call<void>("text", text);
-    });
-
   using json = nlohmann::json;
   try
   {
@@ -32,11 +19,11 @@ std::string LegitScriptLoad(std::string source, emscripten::val imControls) {
   }
 }
 
-std::string LegitScriptFrame(int swapchain_width, int swapchain_height, float time) {
+std::string LegitScriptFrame(std::string context_inputs) {
   using json = nlohmann::json;
   try
   {
-    return ls::RunScript(swapchain_width, swapchain_height, time);
+    return ls::RunScript(context_inputs);
   }
   catch(const std::exception &e)
   {

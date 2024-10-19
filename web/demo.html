@@ -96,7 +96,7 @@ void RenderGraphMain()
     int a = SliderInt("Int param", -42, 42, 5);
     float b = SliderFloat("Float param", -42.0f, 42.0f);
     //float e = SliderFloat("Float param", -42.0f, 42.0f);
-    Text("script int: " + formatInt(a) + " float: " + formatFloat(b));
+    Text("Swapchain size: " + GetSwapchainImage().GetSize());
     Text("should be 12345.52345, but is actually " + formatFloat(12345.52345, '0', 1, 7));
   }
 }}

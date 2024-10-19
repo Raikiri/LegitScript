@@ -106,7 +106,7 @@ async function Init(editorEl, resultsEl) {
       imControlContext[TextualOutputName].innerText = ''
     }
 
-    const frameResult = legitScriptCompiler.LegitScriptFrame(1024, 512, performance.now())
+    const frameResult = legitScriptCompiler.LegitScriptFrame('[{"name": "@swapchain_size", "type": "ivec2", "value":{"x":512, "y":512}}]')
     frameTimingEl.innerText = `${(performance.now() - start).toFixed(2)}ms`
     if (frameResult !== frameOutputEl.innerText) {
       frameOutputEl.innerText = frameResult
