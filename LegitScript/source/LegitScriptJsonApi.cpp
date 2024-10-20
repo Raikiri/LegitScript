@@ -244,7 +244,7 @@ namespace ls
   }
   json SerializeRequest(ls::LoadedImageRequest req)
   {
-    return json::object({{"filename", req.filename}, {"type", "LoadedImageRequest"}});
+    return json::object({{"filename", req.filename}, {"id", req.id}, {"type", "LoadedImageRequest"}});
   }
   json SerializeRequest(ls::CachedImageRequest req)
   {
