@@ -535,6 +535,14 @@ void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string
       SetComp(*this_ptr, i, GetArg<CompType>(gen, i));
     }
   });
+  as_script_engine->RegisterConstructor(type_name.c_str(), "void f(" + comp_type_name + " v)", [](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(*this_ptr, i, GetArg<CompType>(gen, 0));
+    }
+  });
 
   as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opAdd(" + type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
   {
