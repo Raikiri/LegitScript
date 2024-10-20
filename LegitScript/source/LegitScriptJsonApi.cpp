@@ -167,7 +167,7 @@ namespace ls
   {
     return json::object({
       {"type", uniform_desc.type},
-      {"val", SerializeUniformVal(ptr, size, uniform_desc.type)}
+      {"value", SerializeUniformVal(ptr, size, uniform_desc.type)}
     });
   }
   json SerializeUniforms(const std::vector<uint8_t> &uniform_data, const std::vector<ls::ShaderInvocation::UniformValue> &uniform_vals, const std::vector<ls::ShaderDesc::Uniform> &uniform_decls)
