@@ -2,12 +2,11 @@
 #include <iostream>
 
 #include <emscripten/bind.h>
-#include <emscripten/val.h>
 #include <json.hpp>
 
 #include "LegitScriptJsonApi.h"
 
-std::string LegitScriptLoad(std::string source, emscripten::val imControls) {
+std::string LegitScriptLoad(std::string source) {
   using json = nlohmann::json;
   try
   {
