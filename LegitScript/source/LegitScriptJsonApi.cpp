@@ -18,6 +18,15 @@ namespace ls
     }
     return arr;
   }
+  std::string GetBlendModeStr(ls::BlendModes blend_mode)
+  {
+    switch(blend_mode)
+    {
+      case ls::BlendModes::opaque: return "opaque"; break;
+      case ls::BlendModes::alphablend: return "alphablend"; break;
+      case ls::BlendModes::additive: return "additive"; break;
+    }
+  }
   json SerializeUniforms(const std::vector<ls::ShaderDesc::Uniform> uniforms)
   {
     auto arr = json::array();
@@ -51,6 +60,7 @@ namespace ls
       json json_desc;
       json_desc["name"] = desc.name;
       json_desc["body"] = SerializeBlockBody(desc.body);
+      json_desc["blend_mode"] = GetBlendModeStr(desc.blend_mode);
       json_desc["includes"] = desc.includes;
       json_desc["samplers"] = SerializeSamplers(desc.samplers);
       json_desc["uniforms"] = SerializeUniforms(desc.uniforms);
