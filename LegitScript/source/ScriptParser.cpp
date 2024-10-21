@@ -22,7 +22,7 @@ namespace ls
         PreambleSection     <- '[' (RendergraphSection / BlendModeSection / DeclarationSection / IncludeSection / NumthreadsSection) ']'
         RendergraphSection  <- 'rendergraph'
         BlendModeSection    <- 'blendmode' ':' BlendMode
-        BlendMode           <- <'alphablend' | 'opaque' | 'additive' | 'multiplicative'>
+        BlendMode           <- <'opaque' | 'alphablend' | 'additive' | 'multiplicative'>
         DeclarationSection  <- 'declaration' ':' String
         IncludeSection      <- 'include' ':' StringArray
         NumthreadsSection   <- 'numthreads' Int3
