@@ -44,7 +44,13 @@ namespace ls
         UnquotedString      <- (!('\"') .)*
         Int3                <- '(' Int ',' Int ',' Int ')'
         Int                 <- < [0-9][0-9]* >
-        %whitespace         <- [ \t\r\n]*
+        %whitespace         <-  (WhiteSpace / EndOfLine)*
+        WhiteSpace          <- SpaceChar / Comment
+        Comment             <-  BlockComment / LineComment
+        SpaceChar           <- ' ' / '\t'
+        BlockComment        <-  '/*' (!'*/' .)* '*/'
+        LineComment         <-  ('//') (!EndOfLine .)* &EndOfLine
+        EndOfLine           <-  '\r\n' / '\n' / '\r'
         %word               <- Name
       )";
     }

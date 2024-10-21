@@ -14,8 +14,9 @@
 {{
   //more includes
 }}
-
-
+//comment
+/*
+also comment*/
 [include: "util"]
 void ColorPass(in vec3 in_color, out vec4 out_color)
 {{
