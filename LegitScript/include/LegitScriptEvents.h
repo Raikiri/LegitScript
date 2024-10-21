@@ -33,7 +33,8 @@ namespace ls
   {
     opaque,
     alphablend,
-    additive
+    additive,
+    multiplicative
   };
 
   struct BlockBody

@@ -25,6 +25,7 @@ namespace ls
       case ls::BlendModes::opaque: return "opaque"; break;
       case ls::BlendModes::alphablend: return "alphablend"; break;
       case ls::BlendModes::additive: return "additive"; break;
+      case ls::BlendModes::multiplicative: return "multiplicative"; break;
     }
   }
   json SerializeUniforms(const std::vector<ls::ShaderDesc::Uniform> uniforms)
