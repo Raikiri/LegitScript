@@ -593,6 +593,28 @@ void RenderGraphScript::Impl::RegisterVecType(std::string type_name, std::string
     }
     gen->SetReturnObject(&res);
   });
+  as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opDiv(" + type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto *other_ptr = (VecType*)gen->GetArgObject(0);
+    VecType res;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(res, i, GetComp<VecType, CompType>(*this_ptr, i) / GetComp<VecType, CompType>(*other_ptr, i));
+    }
+    gen->SetReturnObject(&res);
+  });
+  as_script_engine->RegisterMethod(type_name.c_str(), (type_name + " " + "opDiv(" + comp_type_name + ") const").c_str(), [=](asIScriptGeneric *gen)
+  {
+    auto *this_ptr = (VecType*)gen->GetObject();
+    auto other = GetArg<CompType>(gen, 0);
+    VecType res;
+    for(size_t i = 0; i < CompCount; i++)
+    {
+      SetComp(res, i, GetComp<VecType, CompType>(*this_ptr, i) / other);
+    }
+    gen->SetReturnObject(&res);
+  });
 
   as_script_engine->RegisterGlobalFunction(std::string("string to_string(") + type_name + " v)", [](asIScriptGeneric *gen)
   {
