@@ -36,4 +36,22 @@ namespace ls
     int z;
     int w;
   };
+  /*struct uvec2
+  {
+    unsigned int x;
+    unsigned int y;
+  };
+  struct uvec3
+  {
+    unsigned int x;
+    unsigned int y;
+    unsigned int z;
+  };
+  struct uvec4
+  {
+    unsigned int x;
+    unsigned int y;
+    unsigned int z;
+    unsigned int w;
+  };*/
 }

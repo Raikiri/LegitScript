@@ -365,6 +365,9 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   RegisterVecType<ls::ivec2, 2>("ivec2", "IVec2", "int");
   RegisterVecType<ls::ivec3, 3>("ivec3", "IVec3", "int");
   RegisterVecType<ls::ivec4, 4>("ivec4", "IVec4", "int");
+  RegisterVecType<ls::ivec2, 2>("uvec2", "UVec2", "uint");
+  RegisterVecType<ls::ivec3, 3>("uvec3", "UVec3", "uint");
+  RegisterVecType<ls::ivec4, 4>("uvec4", "UVec4", "uint");
   RegisterImageType();
   RegisterBasicTypeOperations();
 }
