@@ -32,7 +32,7 @@ void RenderGraphMain()
 {{
   void main()
   {
-    Image img = GetImage(ivec2(128, 128), rgba8);
+    Image img = GetImage(uvec2(128, 128), rgba8);
     Text("Mips count: " + img.GetMipsCount() + ". Mip 2 size: " + img.GetMip(0).GetSize());
     
     //Image img = GetImage(128, 128, rgba8);

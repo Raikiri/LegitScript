@@ -105,7 +105,7 @@ void RunTestJson()
     std::cout << "Shader descs: " << shader_descs << "\n";
       
     std::cout << "Running script\n";
-    std::string script_calls = ls::RunScript("[{\"name\": \"@swapchain_size\", \"type\": \"ivec2\", \"value\":{\"x\":512, \"y\":512}}]");
+    std::string script_calls = ls::RunScript("[{\"name\": \"@swapchain_size\", \"type\": \"uvec2\", \"value\":{\"x\":512, \"y\":512}}]");
     std::cout << "Script ran successfully: \n";
     std::cout << "Script calls: " << script_calls << "\n";
   }
