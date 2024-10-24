@@ -67,6 +67,7 @@ void AddScriptInvocationAsArgSpecific(ShaderInvocation &invocation, asIScriptGen
     invocation.color_attachments.push_back(script_img);
   }else
   {
+    using uint = unsigned int;
     using PodTypes = ls::DecoratedPodType::PodTypes;
     switch(dec_pod_type.type)
     {
@@ -78,6 +79,10 @@ void AddScriptInvocationAsArgSpecific(ShaderInvocation &invocation, asIScriptGen
       case PodTypes::ivec2:  invocation.AddUniformValue(*(ivec2*)gen->GetArgObject(param_idx)); break;
       case PodTypes::ivec3:  invocation.AddUniformValue(*(ivec3*)gen->GetArgObject(param_idx)); break;
       case PodTypes::ivec4:  invocation.AddUniformValue(*(ivec4*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::uint_:   invocation.AddUniformValue(   uint(gen->GetArgDWord(param_idx))); break;
+      case PodTypes::uvec2:  invocation.AddUniformValue(*(uvec2*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::uvec3:  invocation.AddUniformValue(*(uvec3*)gen->GetArgObject(param_idx)); break;
+      case PodTypes::uvec4:  invocation.AddUniformValue(*(uvec4*)gen->GetArgObject(param_idx)); break;
       default: throw std::runtime_error("Can't convert arg type to pod type"); break;
     } 
   }
@@ -113,6 +118,10 @@ struct ScriptContext
   std::map<std::string, ivec2> ivec2_params;
   std::map<std::string, ivec3> ivec3_params;
   std::map<std::string, ivec4> ivec4_params;
+  std::map<std::string, unsigned int> uint_params;
+  std::map<std::string, uvec2> uvec2_params;
+  std::map<std::string, uvec3> uvec3_params;
+  std::map<std::string, uvec4> uvec4_params;
   std::map<std::string, float> float_params;
   std::map<std::string, vec2> vec2_params;
   std::map<std::string, vec3> vec3_params;
@@ -158,6 +167,26 @@ template<>
 ivec4 &ScriptContext::GetContextRef<ivec4>(std::string name)
 {
   return this->ivec4_params[name];
+}
+template<>
+unsigned int &ScriptContext::GetContextRef<unsigned int>(std::string name)
+{
+  return this->uint_params[name];
+}
+template<>
+uvec2 &ScriptContext::GetContextRef<uvec2>(std::string name)
+{
+  return this->uvec2_params[name];
+}
+template<>
+uvec3 &ScriptContext::GetContextRef<uvec3>(std::string name)
+{
+  return this->uvec3_params[name];
+}
+template<>
+uvec4 &ScriptContext::GetContextRef<uvec4>(std::string name)
+{
+  return this->uvec4_params[name];
 }
 template<>
 LoadedImage &ScriptContext::GetContextRef<ls::LoadedImage>(std::string name)
@@ -365,9 +394,9 @@ void RenderGraphScript::Impl::RegisterAsScriptGlobals()
   RegisterVecType<ls::ivec2, 2>("ivec2", "IVec2", "int");
   RegisterVecType<ls::ivec3, 3>("ivec3", "IVec3", "int");
   RegisterVecType<ls::ivec4, 4>("ivec4", "IVec4", "int");
-  RegisterVecType<ls::ivec2, 2>("uvec2", "UVec2", "uint");
-  RegisterVecType<ls::ivec3, 3>("uvec3", "UVec3", "uint");
-  RegisterVecType<ls::ivec4, 4>("uvec4", "UVec4", "uint");
+  RegisterVecType<ls::uvec2, 2>("uvec2", "UVec2", "uint");
+  RegisterVecType<ls::uvec3, 3>("uvec3", "UVec3", "uint");
+  RegisterVecType<ls::uvec4, 4>("uvec4", "UVec4", "uint");
   RegisterImageType();
   RegisterBasicTypeOperations();
 }
@@ -391,6 +420,12 @@ void RenderGraphScript::Impl::RegisterBasicTypeOperations()
     auto *name = (std::string*)gen->GetArgObject(0);
     //this does not invalidate existing points
     gen->SetReturnAddress(&this->script_context.int_params[*name]);
+  });
+  as_script_engine->RegisterGlobalFunction("uint &ContextUInt(string name)", [this](asIScriptGeneric *gen)
+  {
+    auto *name = (std::string*)gen->GetArgObject(0);
+    //this does not invalidate existing points
+    gen->SetReturnAddress(&this->script_context.uint_params[*name]);
   });
   as_script_engine->RegisterGlobalFunction("float &ContextFloat(string name)", [this](asIScriptGeneric *gen)
   {

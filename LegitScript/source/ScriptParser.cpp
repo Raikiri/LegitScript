@@ -30,7 +30,7 @@ namespace ls
         BlockBody           <- (!('}}') .)*
         ArgDescs            <- ArgDesc? (',' ArgDesc)* 
         ArgDesc             <- (DecoratedPodType / DecoratedImageType / SamplerType) Name
-        PodType             <- <'void' | 'float' | 'vec2' | 'vec3' | 'vec4' | 'int' | 'ivec2' | 'ivec3' | 'ivec4'>
+        PodType             <- <'void' | 'float' | 'vec2' | 'vec3' | 'vec4' | 'int' | 'ivec2' | 'ivec3' | 'ivec4' | 'uint' | 'uvec2' | 'uvec3' | 'uvec4'>
         DecoratedPodType    <- PodAccess? PodType
         PodAccess           <- <'in' | 'out' | 'inout'>
         DecoratedImageType  <- ImageAccess? ImageType '<' ImagePixelFormat '>'
@@ -284,6 +284,10 @@ namespace ls
       case PodTypes::ivec2: return "ivec2"; break;
       case PodTypes::ivec3: return "ivec3"; break;
       case PodTypes::ivec4: return "ivec4"; break;
+      case PodTypes::uint_: return "uint"; break;
+      case PodTypes::uvec2: return "uvec2"; break;
+      case PodTypes::uvec3: return "uvec3"; break;
+      case PodTypes::uvec4: return "uvec4"; break;
       case PodTypes::void_: return "void"; break;
       default: throw std::runtime_error("Can't generate glsl type");
     }

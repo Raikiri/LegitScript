@@ -22,6 +22,10 @@ namespace ls
       ivec2,
       ivec3,
       ivec4,
+      uint_,
+      uvec2,
+      uvec3,
+      uvec4,
       undefined
     };
     PodTypes type;

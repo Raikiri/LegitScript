@@ -162,6 +162,20 @@ namespace ls
   {
     return json::object({{"x", val.x}, {"y", val.y}, {"z", val.z}, {"w", val.w}});
   }
+  json SerializeUVec2(uvec2 val)
+  {
+    return json::object({{"x", val.x}, {"y", val.y}});
+  }
+  json SerializeUVec3(uvec3 val)
+  {
+    return json::object({{"x", val.x}, {"y", val.y}, {"z", val.z}});
+  }
+  json SerializeUVec4(uvec4 val)
+  {
+    return json::object({{"x", val.x}, {"y", val.y}, {"z", val.z}, {"w", val.w}});
+  }
+
+
   json SerializeUniformVal(void *ptr, size_t size, std::string type)
   {
     if(type == "float"){ assert(size == sizeof(float)); return json::value_type(*(float*)ptr);}
@@ -172,6 +186,10 @@ namespace ls
     if(type == "ivec2"){ assert(size == sizeof(ivec2)); return SerializeIVec2(*(ivec2*)ptr);}
     if(type == "ivec3"){ assert(size == sizeof(ivec3)); return SerializeIVec3(*(ivec3*)ptr);}
     if(type == "ivec4"){ assert(size == sizeof(ivec4)); return SerializeIVec4(*(ivec4*)ptr);}
+    if(type == "uint"){ assert(size == sizeof(unsigned int)); return json::value_type(*(unsigned int*)ptr);}
+    if(type == "uvec2"){ assert(size == sizeof(uvec2)); return SerializeUVec2(*(uvec2*)ptr);}
+    if(type == "uvec3"){ assert(size == sizeof(uvec3)); return SerializeUVec3(*(uvec3*)ptr);}
+    if(type == "uvec4"){ assert(size == sizeof(uvec4)); return SerializeUVec4(*(uvec4*)ptr);}
     throw std::runtime_error("Unknown type: " + type);
   }
   json SerializeUniform(void *ptr, size_t size, ls::ShaderDesc::Uniform uniform_desc)
@@ -296,7 +314,7 @@ namespace ls
   {
     ls::ContextInput context_input;
     context_input.name = json_input["name"];
-    
+    using uint = unsigned int;
     json value = json_input["value"];
     if(json_input["type"] == "float") context_input.value = float(value);
     if(json_input["type"] == "vec2") context_input.value = ls::vec2{float(value["x"]), float(value["y"])};
@@ -306,6 +324,10 @@ namespace ls
     if(json_input["type"] == "ivec2") context_input.value = ls::ivec2{int(value["x"]), int(value["y"])};
     if(json_input["type"] == "ivec3") context_input.value = ls::ivec3{int(value["x"]), int(value["y"]), int(value["z"])};
     if(json_input["type"] == "ivec4") context_input.value = ls::ivec4{int(value["x"]), int(value["y"]), int(value["z"]), int(value["w"])};
+    if(json_input["type"] == "uint") context_input.value = uint(value);
+    if(json_input["type"] == "uvec2") context_input.value = ls::uvec2{uint(value["x"]), uint(value["y"])};
+    if(json_input["type"] == "uvec3") context_input.value = ls::uvec3{uint(value["x"]), uint(value["y"]), uint(value["z"])};
+    if(json_input["type"] == "uvec4") context_input.value = ls::uvec4{uint(value["x"]), uint(value["y"]), uint(value["z"]), uint(value["w"])};
     //if(json_input["type"] == "LoadedImage") context_input.value = ls::LoadedImage{int(value["x"]), int(value["y"]), int(value["z"]), int(value["w"])};
     return context_input;
   }

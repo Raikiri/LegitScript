@@ -9,7 +9,7 @@ namespace ls
     ivec2 size;
     ls::PixelFormats pixel_format;
   };
-  using ContextValueType = std::variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4, LoadedImage>;
+  using ContextValueType = std::variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4, uint, uvec2, uvec3, uvec4, LoadedImage>;
   struct ContextInput
   {
     std::string name;
