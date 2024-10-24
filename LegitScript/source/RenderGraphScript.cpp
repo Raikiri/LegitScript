@@ -529,6 +529,7 @@ void RenderGraphScript::Impl::RegisterImageType()
 template<typename T> T GetArg(asIScriptGeneric *gen, size_t arg_idx) {assert(0);}
 template<> float GetArg<float>(asIScriptGeneric *gen, size_t arg_idx){return gen->GetArgFloat(arg_idx);}
 template<> int GetArg<int>(asIScriptGeneric *gen, size_t arg_idx){return gen->GetArgDWord(arg_idx);}
+template<> unsigned int GetArg<unsigned int>(asIScriptGeneric *gen, size_t arg_idx){return (unsigned int)gen->GetArgDWord(arg_idx);}
 
 
 template<typename VecType, typename CompType>
