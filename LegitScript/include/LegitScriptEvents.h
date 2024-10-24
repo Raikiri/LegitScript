@@ -121,7 +121,7 @@ namespace ls
   struct CachedImageRequest
   {
     ls::PixelFormats pixel_format;
-    ivec2 size;
+    uvec2 size;
     Image::Id id;
     bool operator < (const CachedImageRequest &other) const
     {

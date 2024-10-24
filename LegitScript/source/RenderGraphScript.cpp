@@ -213,7 +213,7 @@ private:
 
   struct ImageInfo
   {
-    ivec2 size;
+    uvec2 size;
     ls::PixelFormats pixel_format;
     size_t GetMipsCount() const
     {
@@ -222,9 +222,9 @@ private:
       for(;tmp_size.x > 1 && tmp_size.y > 1; tmp_size.x /= 2, tmp_size.y /= 2, mips_count++);
       return mips_count;
     }
-    ivec2 GetMipSize(int mip_level) const
+    uvec2 GetMipSize(uint mip_level) const
     {
-      return ivec2{size.x >> mip_level, size.y >> mip_level};
+      return uvec2{size.x >> mip_level, size.y >> mip_level};
     }
   };
   std::vector<ImageInfo> image_infos;
@@ -277,7 +277,7 @@ ScriptEvents RenderGraphScript::Impl::RunScript(const std::vector<ContextInput> 
   script_events = ScriptEvents();
   SetContextInputs(context_inputs);
   
-  ivec2 swapchain_size = this->script_context.GetContextRef<ivec2>("@swapchain_size");
+  uvec2 swapchain_size = this->script_context.GetContextRef<uvec2>("@swapchain_size");
   image_infos.clear();
   image_infos.push_back({swapchain_size, ls::PixelFormats::rgba8});
   
@@ -439,19 +439,18 @@ void RenderGraphScript::Impl::RegisterImageType()
 {
   as_script_engine->RegisterType<ls::Image>("Image");
 
-  as_script_engine->RegisterGlobalFunction("Image GetMippedImage(int width, int height, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterGlobalFunction("Image GetMippedImage(uvec2 size, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
   {
-    int width = gen->GetArgDWord(0);
-    int height = gen->GetArgDWord(1);
-    auto pixel_format = ls::PixelFormats(gen->GetArgDWord(2));
+    auto size = *(ls::uvec2*)gen->GetArgObject(0);
+    auto pixel_format = ls::PixelFormats(gen->GetArgDWord(1));
     
     Image::Id id = this->image_infos.size();
-    this->image_infos.push_back({ivec2{width, height}, pixel_format});
+    this->image_infos.push_back({size, pixel_format});
 
     ls::CachedImageRequest image_request;
     image_request.id = id;
     image_request.pixel_format = pixel_format;
-    image_request.size = {width, height};
+    image_request.size = size;
     this->script_events.context_requests.push_back(image_request);
 
     ls::Image img;
@@ -459,9 +458,9 @@ void RenderGraphScript::Impl::RegisterImageType()
     img.mip_range = ivec2{0, int(this->image_infos[id].GetMipsCount())};
     gen->SetReturnObject(&img);
   });
-  as_script_engine->RegisterGlobalFunction("Image GetImage(ivec2 size, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterGlobalFunction("Image GetImage(uvec2 size, PixelFormats pixel_format)", [this](asIScriptGeneric *gen)
   {
-    auto size = *(ls::ivec2*)gen->GetArgObject(0);
+    auto size = *(ls::uvec2*)gen->GetArgObject(0);
     auto pixel_format = ls::PixelFormats(gen->GetArgDWord(1));
     
     ls::CachedImageRequest image_request;
@@ -507,13 +506,13 @@ void RenderGraphScript::Impl::RegisterImageType()
 
     gen->SetReturnObject(&dst_img);
   });
-  as_script_engine->RegisterMethod("Image", "ivec2 GetSize() const", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterMethod("Image", "uvec2 GetSize() const", [this](asIScriptGeneric *gen)
   {
     auto *this_ptr = (ls::Image*)gen->GetObject();
-    ivec2 mip_size = this->image_infos[this_ptr->id].GetMipSize(this_ptr->mip_range.x);
+    uvec2 mip_size = this->image_infos[this_ptr->id].GetMipSize(this_ptr->mip_range.x);
     gen->SetReturnObject(&mip_size);
   });
-  as_script_engine->RegisterMethod("Image", "int GetMipsCount() const", [this](asIScriptGeneric *gen)
+  as_script_engine->RegisterMethod("Image", "uint GetMipsCount() const", [this](asIScriptGeneric *gen)
   {
     auto *this_ptr = (ls::Image*)gen->GetObject();
     int mips_count = this_ptr->mip_range.y - this_ptr->mip_range.x;
