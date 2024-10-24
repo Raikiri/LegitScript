@@ -279,7 +279,7 @@ namespace ls
   {
     return json::object({
       {"type", "CachedImageRequest"},
-      {"size", SerializeIVec2(req.size)},
+      {"size", SerializeUVec2(req.size)},
       {"pixel_format", PixelFormatToStr(req.pixel_format)},
       {"id", req.id}
     });
