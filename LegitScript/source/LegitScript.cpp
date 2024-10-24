@@ -196,7 +196,9 @@ namespace ls
             const auto &included_body = parsed_script.blocks[included_idx].body;
             source_assembler->AddSourceBlock(included_body.text, included_body.start);
           }
+          source_assembler->AddNonSourceBlock("void main(){\n");
           source_assembler->AddSourceBlock(block.body.text, block.body.start);
+          source_assembler->AddNonSourceBlock("}\n");
           try
           {
             render_graph_script.LoadScript(source_assembler->GetSource(), pass_decls);
