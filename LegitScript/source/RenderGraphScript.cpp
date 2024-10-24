@@ -222,7 +222,7 @@ private:
       for(;tmp_size.x > 1 && tmp_size.y > 1; tmp_size.x /= 2, tmp_size.y /= 2, mips_count++);
       return mips_count;
     }
-    uvec2 GetMipSize(uint mip_level) const
+    uvec2 GetMipSize(unsigned int mip_level) const
     {
       return uvec2{size.x >> mip_level, size.y >> mip_level};
     }
