@@ -30,8 +30,13 @@ void RenderGraphMain()
   }
 }}
 ```
+
+# Where can I try it?
+A web-based LegitScriptEditor running LegitScript under the hood: https://radiance-cascades.github.io/LegitScriptEditor/?gh=Raikiri/LegitCascades/Scaling.ls
+
 # Why another language?
 Glad you asked! In fact, LegitScript tries really hard to not be a language. It pretends to be a minimal extension to glsl that allows you to script your render graph: allocate textures, set render targets and invoke shaders with minimal changes to your familiar syntax. If you know glsl, you should be able to write LegitScript. If you know any C-like language, it should be at least readable for you. It also by design supports nice features like inline debug controls (similar to ImGui), hot reloading, verbose error reporting and just like ImGui it outputs render lists that are agnostic to the API that you use to dispatch them. For example, you can run LegitScript's on a native Vulkan backend or using webgl in your browser. There are usage examples in the repo but they don't do any actual rendering.
+
 
 # How is it meant to be used?
 Shaders themselves are written in conventional glsl, except their bindings (uniforms, images, samplers) are generated automatically by LegitScript.
