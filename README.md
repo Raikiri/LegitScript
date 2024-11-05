@@ -8,26 +8,20 @@ LegitScript is a crossplatform glsl-like hybrid CPU/GPU scripting language that 
 void ColorPass(in float r, in float g, in float b, out vec4 out_color)
 {{
   // Inside of this block is valid glsl code
-  void main()
-  {
-    out_color = vec4(r, g, b + 0.5f, 1.0f);
-  }
+  out_color = vec4(r, g, b + 0.5f, 1.0f);
 }}
 
 void RenderGraphMain()
 {{
   // Inside of this block is valid angelscript code that's meant to look like glsl
-  void main()
-  {
-    ColorPass(
-      SliderFloat("R", 0.0f, 1.0f),
-      SliderFloat("G", 0.0f, 1.0f),
-      SliderFloat("B", 0.0f, 1.0f),
-      GetSwapchainImage());
-    int a = SliderInt("Int param", -42, 42, 5);
-    float b = SliderFloat("Float param", -42.0f, 42.0f);
-    Text("script int: " + a + " float: " + b);
-  }
+  ColorPass(
+    SliderFloat("R", 0.0f, 1.0f),
+    SliderFloat("G", 0.0f, 1.0f),
+    SliderFloat("B", 0.0f, 1.0f),
+    GetSwapchainImage());
+  int a = SliderInt("Int param", -42, 42, 5);
+  float b = SliderFloat("Float param", -42.0f, 42.0f);
+  Text("script int: " + a + " float: " + b);
 }}
 ```
 
