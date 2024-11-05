@@ -82,7 +82,7 @@ void ColorPass(in float r, in float g, in float b, out vec4 out_color)
 [rendergraph]
 void RenderGraphMain()
 {{
-  Image img = GetImage(ivec2(128, 128), rgba8);
+  Image img = GetImage(uvec2(128, 128), rgba8);
   ColorPass(
     SliderFloat("R", 0.0f, 1.0f) + 0.5f,
     SliderFloat("G", 0.0f, 1.0f),
