@@ -33,12 +33,12 @@ jobs:
 
     - uses: actions/upload-artifact@v4.3.5
       with:
-        name: 'LegitScriptWasm-${{ github.ref_name }}.js'
+        name: 'LegitScriptWasm-${{ github.sha }}.js'
         path: '${{github.workspace}}/build/web/LegitScriptWasm.js'
         overwrite: true
     - uses: actions/upload-artifact@v4.3.5
       with:
-        name: 'LegitScriptWasm-${{ github.ref_name }}.wasm'
+        name: 'LegitScriptWasm-${{ github.sha }}.wasm'
         path: '${{github.workspace}}/build/web/LegitScriptWasm.wasm'
         overwrite: true
         
