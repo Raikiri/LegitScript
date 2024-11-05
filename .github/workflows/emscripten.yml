@@ -35,8 +35,9 @@ jobs:
       with:
         name: 'LegitScriptWasm-${{ github.ref_name }}'
         path: |
-          '${{github.workspace}}/build/web/LegitScriptWasm.wasm'
-          '${{github.workspace}}/build/web/LegitScriptWasm.js'
+          ${{github.workspace}}/build/web/LegitScriptWasm.wasm
+          ${{github.workspace}}/build/web/LegitScriptWasm.js
+        if-no-files-found: error
         overwrite: true
 
     - name: Test
