@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Emscripten toolchain
       uses: mymindstorm/setup-emsdk@v14
 
@@ -31,17 +31,21 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    - name: Store artifact's name
+      id: artifact-name
+      env:
+        REF: ${{ github.ref }}
+      run: echo "::set-output name=value::${REF////-}-test"
+
     - uses: actions/upload-artifact@v4.3.5
       with:
-        name: 'LegitScriptWasm-${{ github.sha }}.js'
-        path: '${{github.workspace}}/build/web/LegitScriptWasm.js'
+        name: 'LegitScriptWasm-${{ steps.artifact-name.outputs.value }}'
+        path: |
+          ${{github.workspace}}/build/web/LegitScriptWasm.wasm
+          ${{github.workspace}}/build/web/LegitScriptWasm.js
+        if-no-files-found: error
         overwrite: true
-    - uses: actions/upload-artifact@v4.3.5
-      with:
-        name: 'LegitScriptWasm-${{ github.sha }}.wasm'
-        path: '${{github.workspace}}/build/web/LegitScriptWasm.wasm'
-        overwrite: true
-        
+
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
