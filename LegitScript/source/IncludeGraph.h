@@ -20,7 +20,14 @@ namespace ls
     {
       FlattenNode(graph, dst_node, adjacent_idx, depth + 1);
     }
-    if(depth != 0)
+    
+    //TODO: this is O(N^2), replace at some point with std::set() at the cost of additional storage
+    bool already_present = std::find(
+      dst_node.adjacent_nodes.begin(),
+      dst_node.adjacent_nodes.end(),
+      curr_idx) != dst_node.adjacent_nodes.end();
+      
+    if(depth != 0 && !already_present)
       dst_node.adjacent_nodes.push_back(curr_idx);
   }
   
