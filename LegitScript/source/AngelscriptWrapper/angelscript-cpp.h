@@ -5,6 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <scriptstdstring/scriptstdstring.h>
+#include <scriptarray/scriptarray.h>
 #include <scriptmath/scriptmath.h>
 
 namespace as
@@ -171,6 +172,7 @@ namespace as
     {
       ptr = asCreateScriptEngine();
       RegisterStdString(ptr);
+      RegisterScriptArray(ptr, true);
       RegisterScriptMath_Generic(ptr);
       if(!ptr) throw std::runtime_error("Failed to start as engine");
       
